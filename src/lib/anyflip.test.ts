@@ -171,18 +171,49 @@ test("rejects upstream redirects", async (t) => {
   await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
 });
 
+test("cancels rejected HTTP response bodies", async (t) => {
+  let cancellations = 0;
+  const responses = [403, 404, 302, 500].map(
+    (status) =>
+      new Response(
+        new ReadableStream({
+          cancel() {
+            cancellations += 1;
+          },
+        }),
+        { status },
+      ),
+  );
+  t.mock.method(globalThis, "fetch", async () => responses.shift()!);
+
+  await assert.rejects(fetchAnyFlipBook(identity), AnyFlipNotFoundError);
+  await assert.rejects(fetchAnyFlipBook(identity), AnyFlipNotFoundError);
+  await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
+  await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
+  assert.equal(cancellations, 4);
+});
+
 test("rejects oversized declared config before parsing", async (t) => {
+  let cancelled = false;
   t.mock.method(
     globalThis,
     "fetch",
     async () =>
-      new Response(configSource, {
-        status: 200,
-        headers: { "content-length": String(MAX_CONFIG_BYTES + 1) },
-      }),
+      new Response(
+        new ReadableStream({
+          cancel() {
+            cancelled = true;
+          },
+        }),
+        {
+          status: 200,
+          headers: { "content-length": String(MAX_CONFIG_BYTES + 1) },
+        },
+      ),
   );
 
   await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
+  assert.equal(cancelled, true);
 });
 
 test("cancels streamed config once byte limit is exceeded", async (t) => {
@@ -205,6 +236,30 @@ test("cancels streamed config once byte limit is exceeded", async (t) => {
 
   await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
   assert.equal(cancelled, true);
+});
+
+test("cancels and releases the reader when reading fails", async (t) => {
+  let cancelled = false;
+  let released = false;
+  const response = new Response(new ReadableStream(), { status: 200 });
+  t.mock.method(response.body!, "getReader", () =>
+    ({
+      async read() {
+        throw new Error("read failed");
+      },
+      async cancel() {
+        cancelled = true;
+      },
+      releaseLock() {
+        released = true;
+      },
+    }) as unknown as ReadableStreamDefaultReader<Uint8Array>,
+  );
+  t.mock.method(globalThis, "fetch", async () => response);
+
+  await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
+  assert.equal(cancelled, true);
+  assert.equal(released, true);
 });
 
 test("maps upstream 403 and 404 responses to not found", async (t) => {

@@ -111,12 +111,15 @@ export async function fetchAnyFlipBook(
   }
 
   if (response.status === 403 || response.status === 404) {
+    await response.body?.cancel();
     throw new AnyFlipNotFoundError("AnyFlip book not found");
   }
   if (response.status >= 300 && response.status < 400) {
+    await response.body?.cancel();
     throw new AnyFlipUpstreamError(`AnyFlip returned ${response.status}`);
   }
   if (!response.ok) {
+    await response.body?.cancel();
     throw new AnyFlipUpstreamError(`AnyFlip returned ${response.status}`);
   }
 
@@ -133,31 +136,40 @@ export async function fetchAnyFlipBook(
 async function readConfig(response: Response): Promise<string> {
   const contentLength = Number(response.headers.get("content-length"));
   if (contentLength > MAX_CONFIG_BYTES) {
+    await response.body?.cancel();
     throw new Error("AnyFlip config exceeds byte limit");
   }
   if (!response.body) throw new Error("AnyFlip config body is missing");
 
   const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let byteLength = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    byteLength += value.byteLength;
-    if (byteLength > MAX_CONFIG_BYTES) {
-      await reader.cancel();
-      throw new Error("AnyFlip config exceeds byte limit");
+  try {
+    const chunks: Uint8Array[] = [];
+    let byteLength = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      byteLength += value.byteLength;
+      if (byteLength > MAX_CONFIG_BYTES) {
+        throw new Error("AnyFlip config exceeds byte limit");
+      }
+      chunks.push(value);
     }
-    chunks.push(value);
-  }
 
-  const bytes = new Uint8Array(byteLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
+    const bytes = new Uint8Array(byteLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return new TextDecoder().decode(bytes);
+  } catch (error) {
+    try {
+      await reader.cancel();
+    } catch {}
+    throw error;
+  } finally {
+    reader.releaseLock();
   }
-  return new TextDecoder().decode(bytes);
 }
 
 function isConfig(value: unknown): value is {
