@@ -111,15 +111,15 @@ export async function fetchAnyFlipBook(
   }
 
   if (response.status === 403 || response.status === 404) {
-    await response.body?.cancel();
+    await cancelBody(response);
     throw new AnyFlipNotFoundError("AnyFlip book not found");
   }
   if (response.status >= 300 && response.status < 400) {
-    await response.body?.cancel();
+    await cancelBody(response);
     throw new AnyFlipUpstreamError(`AnyFlip returned ${response.status}`);
   }
   if (!response.ok) {
-    await response.body?.cancel();
+    await cancelBody(response);
     throw new AnyFlipUpstreamError(`AnyFlip returned ${response.status}`);
   }
 
@@ -136,7 +136,7 @@ export async function fetchAnyFlipBook(
 async function readConfig(response: Response): Promise<string> {
   const contentLength = Number(response.headers.get("content-length"));
   if (contentLength > MAX_CONFIG_BYTES) {
-    await response.body?.cancel();
+    await cancelBody(response);
     throw new Error("AnyFlip config exceeds byte limit");
   }
   if (!response.body) throw new Error("AnyFlip config body is missing");
@@ -170,6 +170,12 @@ async function readConfig(response: Response): Promise<string> {
   } finally {
     reader.releaseLock();
   }
+}
+
+async function cancelBody(response: Response): Promise<void> {
+  try {
+    await response.body?.cancel();
+  } catch {}
 }
 
 function isConfig(value: unknown): value is {

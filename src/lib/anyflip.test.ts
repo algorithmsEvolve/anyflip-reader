@@ -193,6 +193,35 @@ test("cancels rejected HTTP response bodies", async (t) => {
   assert.equal(cancellations, 4);
 });
 
+test("preserves HTTP errors when response body cancellation rejects", async (t) => {
+  const cases = [
+    [403, AnyFlipNotFoundError, "AnyFlip book not found"],
+    [404, AnyFlipNotFoundError, "AnyFlip book not found"],
+    [302, AnyFlipUpstreamError, "AnyFlip returned 302"],
+    [500, AnyFlipUpstreamError, "AnyFlip returned 500"],
+  ] as const;
+  const responses = cases.map(
+    ([status]) =>
+      new Response(
+        new ReadableStream({
+          cancel() {
+            throw new Error("cancel failed");
+          },
+        }),
+        { status },
+      ),
+  );
+  t.mock.method(globalThis, "fetch", async () => responses.shift()!);
+
+  for (const [, ErrorType, message] of cases) {
+    await assert.rejects(fetchAnyFlipBook(identity), (error: unknown) => {
+      assert.ok(error instanceof ErrorType);
+      assert.equal(error.message, message);
+      return true;
+    });
+  }
+});
+
 test("rejects oversized declared config before parsing", async (t) => {
   let cancelled = false;
   t.mock.method(
@@ -214,6 +243,33 @@ test("rejects oversized declared config before parsing", async (t) => {
 
   await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
   assert.equal(cancelled, true);
+});
+
+test("preserves declared oversize error when body cancellation rejects", async (t) => {
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () =>
+      new Response(
+        new ReadableStream({
+          cancel() {
+            throw new Error("cancel failed");
+          },
+        }),
+        {
+          status: 200,
+          headers: { "content-length": String(MAX_CONFIG_BYTES + 1) },
+        },
+      ),
+  );
+
+  await assert.rejects(fetchAnyFlipBook(identity), (error: unknown) => {
+    assert.ok(error instanceof AnyFlipUpstreamError);
+    assert.equal(error.message, "AnyFlip returned invalid config");
+    assert.ok(error.cause instanceof Error);
+    assert.equal(error.cause.message, "AnyFlip config exceeds byte limit");
+    return true;
+  });
 });
 
 test("cancels streamed config once byte limit is exceeded", async (t) => {
