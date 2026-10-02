@@ -39,7 +39,7 @@ No new dependency. No new test file because task added no nontrivial pure logic;
 
 ## Commit
 
-Implementation commit SHA: `0ba1e10e93c391211ac8b33b531c8f58315d9ed4`
+Implementation commit SHA: `bd8f7a8396b7eaadccf7443ab3bc8dcec0d399a6`
 
 ## Concerns
 
