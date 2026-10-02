@@ -374,6 +374,13 @@ button:focus-visible {
   }
 }
 
+@media (max-height: 464px) and (orientation: landscape) {
+  .flip-book {
+    transform: scale(calc((100dvh - 9rem) / 320));
+    transform-origin: top center;
+  }
+}
+
 @media (max-width: 38rem) {
   .landing {
     width: min(100% - 1.5rem, 72rem);

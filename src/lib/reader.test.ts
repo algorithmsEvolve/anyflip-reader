@@ -64,6 +64,7 @@ test("keeps portrait and narrow landscape on opposite sides of spread threshold"
   );
   const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   const minWidth = Number(source.match(/minWidth=\{(\d+)\}/)?.[1]);
+  const minHeight = Number(source.match(/minHeight=\{(\d+)\}/)?.[1]);
   const portraitCap = Number(
     css.match(
       /@media \(max-width: 47\.9375rem\) and \(orientation: portrait\)[\s\S]*?\.flip-book \{\s*max-width: (\d+)px !important;/,
@@ -78,4 +79,10 @@ test("keeps portrait and narrow landscape on opposite sides of spread threshold"
   assert.ok(portraitCap < spreadThreshold);
   assert.ok(portraitStageWidth < spreadThreshold);
   assert.ok(landscapeStageWidth >= spreadThreshold);
+  assert.match(
+    css,
+    new RegExp(
+      `@media \\(max-height: ${minHeight + 144}px\\) and \\(orientation: landscape\\)[\\s\\S]*?\\.flip-book \\{[\\s\\S]*?transform: scale\\(calc\\(\\(100dvh - 9rem\\) / ${minHeight}\\)\\);`,
+    ),
+  );
 });
