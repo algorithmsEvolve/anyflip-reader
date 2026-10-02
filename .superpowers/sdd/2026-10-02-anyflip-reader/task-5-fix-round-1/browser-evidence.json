@@ -1,0 +1,470 @@
+{
+  "landscape-480x320": {
+    "label": "landscape-480x320",
+    "url": "http://127.0.0.1:4318/read/iehyo/byxp?page=36",
+    "viewport": {
+      "width": 480,
+      "height": 320,
+      "devicePixelRatio": 1
+    },
+    "media": {
+      "portrait": false,
+      "coarse": true,
+      "noHover": true
+    },
+    "document": {
+      "htmlScrollWidth": 480,
+      "htmlScrollHeight": 320,
+      "bodyScrollWidth": 480,
+      "bodyScrollHeight": 320,
+      "horizontalOverflow": false,
+      "verticalOverflow": false
+    },
+    "computedTransform": "matrix(1, 0, 0, 1, 0, 0)",
+    "wrapperClass": "stf__wrapper --landscape",
+    "rects": {
+      "stage": {
+        "x": 16,
+        "y": 72,
+        "width": 463.875,
+        "height": 176,
+        "right": 479.875,
+        "bottom": 248
+      },
+      "book": {
+        "x": 16,
+        "y": 72,
+        "width": 463.875,
+        "height": 176,
+        "right": 479.875,
+        "bottom": 248
+      },
+      "pages": [
+        {
+          "number": "36",
+          "rect": {
+            "x": 116,
+            "y": 72,
+            "width": 132,
+            "height": 176,
+            "right": 248,
+            "bottom": 248
+          }
+        },
+        {
+          "number": "37",
+          "rect": {
+            "x": 248,
+            "y": 72,
+            "width": 132,
+            "height": 176,
+            "right": 380,
+            "bottom": 248
+          }
+        }
+      ],
+      "controls": {
+        "x": 16,
+        "y": 248,
+        "width": 463.875,
+        "height": 56,
+        "right": 479.875,
+        "bottom": 304
+      },
+      "nextButton": {
+        "x": 415.1875,
+        "y": 260,
+        "width": 64.6875,
+        "height": 44,
+        "right": 479.875,
+        "bottom": 304
+      }
+    },
+    "clipping": {
+      "bookBottomWithinStage": true,
+      "pagesWithinStage": true,
+      "controlsBelowStage": true
+    },
+    "pointerHit": {
+      "point": {
+        "x": 447.53125,
+        "y": 282
+      },
+      "tag": "BUTTON",
+      "text": "Next"
+    },
+    "status": "36 of 324",
+    "pointerClick": {
+      "before": "36 of 324",
+      "after": "38 of 324"
+    }
+  },
+  "portrait-320x568": {
+    "label": "portrait-320x568",
+    "url": "http://127.0.0.1:4318/read/iehyo/byxp?page=37",
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "devicePixelRatio": 1
+    },
+    "media": {
+      "portrait": true,
+      "coarse": true,
+      "noHover": true
+    },
+    "document": {
+      "htmlScrollWidth": 320,
+      "htmlScrollHeight": 568,
+      "bodyScrollWidth": 320,
+      "bodyScrollHeight": 568,
+      "horizontalOverflow": false,
+      "verticalOverflow": false
+    },
+    "computedTransform": "matrix(1, 0, 0, 1, 0, 0)",
+    "wrapperClass": "stf__wrapper --portrait",
+    "rects": {
+      "stage": {
+        "x": 12,
+        "y": 72,
+        "width": 296,
+        "height": 346,
+        "right": 308,
+        "bottom": 418
+      },
+      "book": {
+        "x": 12,
+        "y": 47.671875,
+        "width": 296,
+        "height": 394.65625,
+        "right": 308,
+        "bottom": 442.328125
+      },
+      "pages": [
+        {
+          "number": "37",
+          "rect": {
+            "x": 12,
+            "y": 47.828125,
+            "width": 296,
+            "height": 394.65625,
+            "right": 308,
+            "bottom": 442.484375
+          }
+        }
+      ],
+      "controls": {
+        "x": 12,
+        "y": 418,
+        "width": 296,
+        "height": 134,
+        "right": 308,
+        "bottom": 552
+      },
+      "nextButton": {
+        "x": 164,
+        "y": 508,
+        "width": 144,
+        "height": 44,
+        "right": 308,
+        "bottom": 552
+      }
+    },
+    "clipping": {
+      "bookBottomWithinStage": false,
+      "pagesWithinStage": false,
+      "controlsBelowStage": true
+    },
+    "pointerHit": {
+      "point": {
+        "x": 236,
+        "y": 530
+      },
+      "tag": "BUTTON",
+      "text": "Next"
+    },
+    "status": "37 of 324",
+    "swipe": {
+      "direction": "left",
+      "before": "37 of 324",
+      "after": "38 of 324",
+      "url": "http://127.0.0.1:4318/read/iehyo/byxp?page=38"
+    }
+  },
+  "portrait-390x844": {
+    "label": "portrait-390x844",
+    "url": "http://127.0.0.1:4318/read/iehyo/byxp?page=37",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "devicePixelRatio": 1
+    },
+    "media": {
+      "portrait": true,
+      "coarse": true,
+      "noHover": true
+    },
+    "document": {
+      "htmlScrollWidth": 390,
+      "htmlScrollHeight": 844,
+      "bodyScrollWidth": 390,
+      "bodyScrollHeight": 844,
+      "horizontalOverflow": false,
+      "verticalOverflow": false
+    },
+    "computedTransform": "matrix(1, 0, 0, 1, 0, 0)",
+    "wrapperClass": "stf__wrapper --portrait",
+    "rects": {
+      "stage": {
+        "x": 12,
+        "y": 72,
+        "width": 366,
+        "height": 622,
+        "right": 378,
+        "bottom": 694
+      },
+      "book": {
+        "x": 12,
+        "y": 139,
+        "width": 366,
+        "height": 488,
+        "right": 378,
+        "bottom": 627
+      },
+      "pages": [
+        {
+          "number": "37",
+          "rect": {
+            "x": 12,
+            "y": 139,
+            "width": 366,
+            "height": 488,
+            "right": 378,
+            "bottom": 627
+          }
+        }
+      ],
+      "controls": {
+        "x": 12,
+        "y": 694,
+        "width": 366,
+        "height": 134,
+        "right": 378,
+        "bottom": 828
+      },
+      "nextButton": {
+        "x": 199,
+        "y": 784,
+        "width": 179,
+        "height": 44,
+        "right": 378,
+        "bottom": 828
+      }
+    },
+    "clipping": {
+      "bookBottomWithinStage": true,
+      "pagesWithinStage": true,
+      "controlsBelowStage": true
+    },
+    "pointerHit": {
+      "point": {
+        "x": 288.5,
+        "y": 806
+      },
+      "tag": "BUTTON",
+      "text": "Next"
+    },
+    "status": "37 of 324"
+  },
+  "desktop-1440x900": {
+    "label": "desktop-1440x900",
+    "url": "http://127.0.0.1:4318/read/iehyo/byxp?page=36",
+    "viewport": {
+      "width": 1440,
+      "height": 900,
+      "devicePixelRatio": 1
+    },
+    "media": {
+      "portrait": false,
+      "coarse": false,
+      "noHover": false
+    },
+    "document": {
+      "htmlScrollWidth": 1440,
+      "htmlScrollHeight": 900,
+      "bodyScrollWidth": 1440,
+      "bodyScrollHeight": 900,
+      "horizontalOverflow": false,
+      "verticalOverflow": false
+    },
+    "computedTransform": "matrix(1, 0, 0, 1, 0, 0)",
+    "wrapperClass": "stf__wrapper --landscape",
+    "rects": {
+      "stage": {
+        "x": 16,
+        "y": 72,
+        "width": 1408,
+        "height": 756,
+        "right": 1424,
+        "bottom": 828
+      },
+      "book": {
+        "x": 120,
+        "y": 50,
+        "width": 1200,
+        "height": 800,
+        "right": 1320,
+        "bottom": 850
+      },
+      "pages": [
+        {
+          "number": "36",
+          "rect": {
+            "x": 120,
+            "y": 50,
+            "width": 600,
+            "height": 800,
+            "right": 720,
+            "bottom": 850
+          }
+        },
+        {
+          "number": "37",
+          "rect": {
+            "x": 720,
+            "y": 50,
+            "width": 600,
+            "height": 800,
+            "right": 1320,
+            "bottom": 850
+          }
+        }
+      ],
+      "controls": {
+        "x": 16,
+        "y": 828,
+        "width": 1408,
+        "height": 56,
+        "right": 1424,
+        "bottom": 884
+      },
+      "nextButton": {
+        "x": 887.25,
+        "y": 840,
+        "width": 64.6875,
+        "height": 44,
+        "right": 951.9375,
+        "bottom": 884
+      }
+    },
+    "clipping": {
+      "bookBottomWithinStage": false,
+      "pagesWithinStage": false,
+      "controlsBelowStage": true
+    },
+    "pointerHit": {
+      "point": {
+        "x": 919.59375,
+        "y": 862
+      },
+      "tag": "BUTTON",
+      "text": "Next"
+    },
+    "status": "36 of 324"
+  },
+  "desktop-short-1024x400": {
+    "label": "desktop-short-1024x400",
+    "url": "http://127.0.0.1:4318/read/iehyo/byxp?page=36",
+    "viewport": {
+      "width": 1024,
+      "height": 400,
+      "devicePixelRatio": 1
+    },
+    "media": {
+      "portrait": false,
+      "coarse": false,
+      "noHover": false
+    },
+    "document": {
+      "htmlScrollWidth": 1024,
+      "htmlScrollHeight": 400,
+      "bodyScrollWidth": 1024,
+      "bodyScrollHeight": 400,
+      "horizontalOverflow": false,
+      "verticalOverflow": false
+    },
+    "computedTransform": "matrix(1, 0, 0, 1, 0, 0)",
+    "wrapperClass": "stf__wrapper --landscape",
+    "rects": {
+      "stage": {
+        "x": 16,
+        "y": 72,
+        "width": 992,
+        "height": 256,
+        "right": 1008,
+        "bottom": 328
+      },
+      "book": {
+        "x": 16,
+        "y": -98.65625,
+        "width": 992,
+        "height": 661.328125,
+        "right": 1008,
+        "bottom": 562.671875
+      },
+      "pages": [
+        {
+          "number": "36",
+          "rect": {
+            "x": 16.25,
+            "y": -98.65625,
+            "width": 495.75,
+            "height": 661,
+            "right": 512,
+            "bottom": 562.34375
+          }
+        },
+        {
+          "number": "37",
+          "rect": {
+            "x": 512,
+            "y": -98.65625,
+            "width": 495.75,
+            "height": 661,
+            "right": 1007.75,
+            "bottom": 562.34375
+          }
+        }
+      ],
+      "controls": {
+        "x": 16,
+        "y": 328,
+        "width": 992,
+        "height": 56,
+        "right": 1008,
+        "bottom": 384
+      },
+      "nextButton": {
+        "x": 679.25,
+        "y": 340,
+        "width": 64.6875,
+        "height": 44,
+        "right": 743.9375,
+        "bottom": 384
+      }
+    },
+    "clipping": {
+      "bookBottomWithinStage": false,
+      "pagesWithinStage": false,
+      "controlsBelowStage": true
+    },
+    "pointerHit": {
+      "point": {
+        "x": 711.59375,
+        "y": 362
+      },
+      "tag": "BUTTON",
+      "text": "Next"
+    },
+    "status": "36 of 324"
+  }
+}

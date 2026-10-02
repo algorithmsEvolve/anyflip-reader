@@ -79,10 +79,14 @@ test("keeps portrait and narrow landscape on opposite sides of spread threshold"
   assert.ok(portraitCap < spreadThreshold);
   assert.ok(portraitStageWidth < spreadThreshold);
   assert.ok(landscapeStageWidth >= spreadThreshold);
-  assert.match(
-    css,
+  const shortLandscapeRule = css.match(
     new RegExp(
-      `@media \\(max-height: ${minHeight + 144}px\\) and \\(orientation: landscape\\)[\\s\\S]*?\\.flip-book \\{[\\s\\S]*?transform: scale\\(calc\\(\\(100dvh - 9rem\\) / ${minHeight}\\)\\);`,
+      `@media \\(max-height: ${minHeight + 144}px\\) and \\(orientation: landscape\\) and \\(hover: none\\) and \\(pointer: coarse\\) \\{[\\s\\S]*?\\.flip-book \\{[\\s\\S]*?height: calc\\(100dvh - (9rem)\\) !important;[\\s\\S]*?min-height: 0 !important;`,
     ),
   );
+  const availableHeight = 320 - 9 * 16;
+
+  assert.equal(shortLandscapeRule?.[1], "9rem");
+  assert.equal(availableHeight, 176);
+  assert.doesNotMatch(shortLandscapeRule?.[0] ?? "", /transform:/);
 });

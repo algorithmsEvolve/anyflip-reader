@@ -374,10 +374,10 @@ button:focus-visible {
   }
 }
 
-@media (max-height: 464px) and (orientation: landscape) {
+@media (max-height: 464px) and (orientation: landscape) and (hover: none) and (pointer: coarse) {
   .flip-book {
-    transform: scale(calc((100dvh - 9rem) / 320));
-    transform-origin: top center;
+    height: calc(100dvh - 9rem) !important;
+    min-height: 0 !important;
   }
 }
 
