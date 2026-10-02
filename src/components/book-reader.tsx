@@ -7,7 +7,12 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { BookPage } from "@/components/book-page";
 import type { BookMetadata } from "@/lib/anyflip";
 import { normalizePage } from "@/lib/page";
-import { getBookMetadata, isTypingTarget } from "@/lib/reader";
+import {
+  destroyFlipBook,
+  getBookMetadata,
+  isLastSpread,
+  isTypingTarget,
+} from "@/lib/reader";
 
 type BookReaderProps = {
   publisherId: string;
@@ -17,6 +22,7 @@ type BookReaderProps = {
 
 type FlipBookHandle = {
   pageFlip(): {
+    destroy(): void;
     flipNext(): void;
     flipPrev(): void;
     turnToPage(page: number): void;
@@ -43,6 +49,11 @@ export default function BookReader({
   const [jumpPage, setJumpPage] = useState("1");
   const [usePortrait, setUsePortrait] = useState(false);
   const bookRef = useRef<FlipBookHandle | null>(null);
+  const setBookRef = useCallback((handle: FlipBookHandle | null) => {
+    if (!handle) return;
+    bookRef.current = handle;
+    return () => destroyFlipBook(handle, bookRef);
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia(PORTRAIT_QUERY);
@@ -104,7 +115,7 @@ export default function BookReader({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target as HTMLElement | null)) return;
+      if (event.repeat || isTypingTarget(event.target as HTMLElement | null)) return;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         previous();
@@ -163,7 +174,7 @@ export default function BookReader({
       <section className="book-stage" aria-label={`${metadata.title} pages`}>
         <HTMLFlipBook
           key={usePortrait ? "portrait" : "spread"}
-          ref={bookRef}
+          ref={setBookRef}
           className="flip-book"
           style={{}}
           width={600}
@@ -218,7 +229,13 @@ export default function BookReader({
         <p className="page-status" aria-live="polite" aria-atomic="true">
           {currentPage} of {metadata.pageCount}
         </p>
-        <button type="button" onClick={next} disabled={currentPage >= metadata.pageCount}>Next</button>
+        <button
+          type="button"
+          onClick={next}
+          disabled={isLastSpread(currentPage, metadata.pageCount, usePortrait)}
+        >
+          Next
+        </button>
       </footer>
     </main>
   );

@@ -98,3 +98,50 @@ Other checks:
 
 - Automated loaded-state visual verification remains incomplete because browser-use daemon failed and local headless Chrome stalled after capturing loading boundary. Static build, live HTTP/API probes, and contrast checks passed.
 - `react-pageflip` exposes an untyped `any` ref/event API; local narrow handle/event types constrain usage but cannot improve dependency internals.
+
+## Fix Round 1
+
+Status: complete.
+
+Changes:
+
+- Added callback-ref cleanup that calls the underlying PageFlip `destroy()` before keyed orientation replacement or reader unmount. Cleanup clears `bookRef` only when it still points at the destroyed handle, preserving a newer mounted instance.
+- Added pure `isLastSpread` logic. Odd-count landscape final spreads now disable Next when the visible leading page is `pageCount - 1`; URL and status continue storing that leading page. Portrait and even-count behavior stays unchanged.
+- Keyboard shortcuts now ignore repeated `keydown` events.
+- Added focused tests for odd/even portrait/spread boundaries and destroy/ref replacement safety.
+
+TDD evidence:
+
+```text
+RED focused test: 38 passed, 2 failed
+- isLastSpread is not a function
+- destroyFlipBook is not a function
+
+GREEN focused test: 40 passed, 0 failed
+```
+
+Verification:
+
+```text
+npm test          40 passed, 0 failed
+npx tsc --noEmit  exited 0
+npm run lint      exited 0
+npm run build     exited 0
+```
+
+Build routes remained:
+
+```text
+○ /
+ƒ /api/books/[publisherId]/[bookId]
+ƒ /read/[publisherId]/[bookId]
+```
+
+Other checks:
+
+- `git diff --check`: clean
+- Cleanup behavior covered at pure helper seam; no browser-level listener-count assertion added because dependency stores PageFlip instance internally and exposes no listener diagnostics.
+
+Concerns:
+
+- `react-pageflip` 2.0.3 still omits its own unmount cleanup. Local callback-ref cleanup intentionally compensates while component uses this dependency version.
