@@ -5,10 +5,6 @@ type KeyboardTarget = {
   isContentEditable?: boolean;
 };
 
-type FlipBookHandle = {
-  pageFlip(): { destroy(): void } | undefined;
-};
-
 export function getBookMetadata(value: unknown): BookMetadata {
   if (typeof value !== "object" || value === null) {
     throw new Error("Invalid book metadata");
@@ -50,12 +46,4 @@ export function isLastSpread(
   const lastLeadingPage =
     !usePortrait && pageCount % 2 === 1 ? pageCount - 1 : pageCount;
   return currentPage >= lastLeadingPage;
-}
-
-export function destroyFlipBook<T extends FlipBookHandle>(
-  handle: T | null,
-  ref: { current: T | null },
-): void {
-  handle?.pageFlip()?.destroy();
-  if (ref.current === handle) ref.current = null;
 }

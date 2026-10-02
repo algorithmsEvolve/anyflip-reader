@@ -1,12 +1,8 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import {
-  destroyFlipBook,
-  getBookMetadata,
-  isLastSpread,
-  isTypingTarget,
-} from "./reader";
+import { getBookMetadata, isLastSpread, isTypingTarget } from "./reader";
 
 test("accepts complete book metadata", () => {
   assert.deepEqual(
@@ -48,20 +44,24 @@ test("recognizes final landscape spread while preserving its leading page", () =
   assert.equal(isLastSpread(5, 5, true), true);
 });
 
-test("destroys current PageFlip instance and clears only its matching ref", () => {
-  let destroyCount = 0;
-  const handle = { pageFlip: () => ({ destroy: () => destroyCount++ }) };
-  const ref: { current: typeof handle | null } = { current: handle };
+test("keeps one responsive PageFlip instance without manual destruction", () => {
+  const source = readFileSync(
+    new URL("../components/book-reader.tsx", import.meta.url),
+    "utf8",
+  );
+  const flipBookProps = source.match(/<HTMLFlipBook[\s\S]*?>/)?.[0] ?? "";
 
-  destroyFlipBook(handle, ref);
+  assert.match(flipBookProps, /ref=\{bookRef\}/);
+  assert.match(flipBookProps, /usePortrait=\{true\}/);
+  assert.doesNotMatch(flipBookProps, /\bkey=/);
+  assert.doesNotMatch(source, /destroyFlipBook|\.destroy\(\)/);
+});
 
-  assert.equal(destroyCount, 1);
-  assert.equal(ref.current, null);
+test("caps portrait phone book width below spread threshold", () => {
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
-  const replacement = { pageFlip: () => ({ destroy: () => destroyCount++ }) };
-  ref.current = replacement;
-  destroyFlipBook(handle, ref);
-
-  assert.equal(destroyCount, 2);
-  assert.equal(ref.current, replacement);
+  assert.match(
+    css,
+    /@media \(max-width: 47\.9375rem\) and \(orientation: portrait\)[\s\S]*?\.flip-book \{\s*max-width: 479px !important;/,
+  );
 });

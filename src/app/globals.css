@@ -341,6 +341,10 @@ button:focus-visible {
     padding-inline: max(0.75rem, env(safe-area-inset-left)) max(0.75rem, env(safe-area-inset-right));
   }
 
+  .flip-book {
+    max-width: 479px !important;
+  }
+
   .reader-header {
     gap: 0.75rem;
   }

@@ -7,12 +7,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { BookPage } from "@/components/book-page";
 import type { BookMetadata } from "@/lib/anyflip";
 import { normalizePage } from "@/lib/page";
-import {
-  destroyFlipBook,
-  getBookMetadata,
-  isLastSpread,
-  isTypingTarget,
-} from "@/lib/reader";
+import { getBookMetadata, isLastSpread, isTypingTarget } from "@/lib/reader";
 
 type BookReaderProps = {
   publisherId: string;
@@ -22,7 +17,6 @@ type BookReaderProps = {
 
 type FlipBookHandle = {
   pageFlip(): {
-    destroy(): void;
     flipNext(): void;
     flipPrev(): void;
     turnToPage(page: number): void;
@@ -47,17 +41,12 @@ export default function BookReader({
   const [attempt, setAttempt] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [jumpPage, setJumpPage] = useState("1");
-  const [usePortrait, setUsePortrait] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
   const bookRef = useRef<FlipBookHandle | null>(null);
-  const setBookRef = useCallback((handle: FlipBookHandle | null) => {
-    if (!handle) return;
-    bookRef.current = handle;
-    return () => destroyFlipBook(handle, bookRef);
-  }, []);
 
   useEffect(() => {
     const media = window.matchMedia(PORTRAIT_QUERY);
-    const updateMode = () => setUsePortrait(media.matches);
+    const updateMode = () => setIsPortrait(media.matches);
     updateMode();
     media.addEventListener("change", updateMode);
     return () => media.removeEventListener("change", updateMode);
@@ -159,6 +148,8 @@ export default function BookReader({
 
   if (!metadata) return null;
 
+  const startPage = normalizePage(initialPage, metadata.pageCount) - 1;
+
   const submitJump = (event: FormEvent) => {
     event.preventDefault();
     showPage(Number.parseInt(jumpPage, 10));
@@ -173,8 +164,7 @@ export default function BookReader({
 
       <section className="book-stage" aria-label={`${metadata.title} pages`}>
         <HTMLFlipBook
-          key={usePortrait ? "portrait" : "spread"}
-          ref={setBookRef}
+          ref={bookRef}
           className="flip-book"
           style={{}}
           width={600}
@@ -184,10 +174,10 @@ export default function BookReader({
           minHeight={320}
           maxHeight={800}
           size="stretch"
-          startPage={currentPage - 1}
+          startPage={startPage}
           drawShadow
           flippingTime={600}
-          usePortrait={usePortrait}
+          usePortrait={true}
           startZIndex={0}
           autoSize
           maxShadowOpacity={0.35}
@@ -232,7 +222,7 @@ export default function BookReader({
         <button
           type="button"
           onClick={next}
-          disabled={isLastSpread(currentPage, metadata.pageCount, usePortrait)}
+          disabled={isLastSpread(currentPage, metadata.pageCount, isPortrait)}
         >
           Next
         </button>

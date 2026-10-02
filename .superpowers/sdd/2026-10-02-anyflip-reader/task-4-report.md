@@ -145,3 +145,54 @@ Other checks:
 Concerns:
 
 - `react-pageflip` 2.0.3 still omits its own unmount cleanup. Local callback-ref cleanup intentionally compensates while component uses this dependency version.
+
+## Fix Round 2
+
+Status: complete.
+
+Changes:
+
+- Removed orientation-keyed `HTMLFlipBook` remounting and callback-ref cleanup. Reader now keeps one `react-pageflip` instance for its mounted lifetime and never calls `PageFlip.destroy()` from React ref cleanup.
+- Set stable `usePortrait={true}` so PageFlip's resize renderer chooses portrait or landscape from container width in place. Portrait phone CSS caps book width at 479px, below the library's 480px two-page threshold; landscape and desktop retain spread sizing.
+- Kept media-query state only for `isLastSpread` control semantics. No construction-only PageFlip prop changes after mount.
+- Stabilized `startPage` from normalized route input. Orientation changes no longer alter instance identity, current page, or URL.
+- Retained odd final-spread handling and repeated-key suppression.
+- Replaced destroy-helper test with focused source guards for stable ref, fixed portrait capability, no key, and no manual destroy. Added portrait threshold CSS guard.
+
+TDD evidence:
+
+```text
+RED focused test: 39 passed, 1 failed
+- expected ref={bookRef}; existing source used ref={setBookRef}
+
+GREEN focused test: 40 passed, 0 failed
+Final full suite: 41 passed, 0 failed
+```
+
+Verification:
+
+```text
+npm test          41 passed, 0 failed
+npx tsc --noEmit  exited 0
+npm run lint      exited 0
+npm run build     exited 0
+git diff --check  exited 0
+```
+
+Build routes remained:
+
+```text
+○ /
+ƒ /api/books/[publisherId]/[bookId]
+ƒ /read/[publisherId]/[bookId]
+```
+
+Other checks:
+
+- Added-line security scan: no hardcoded secrets, shell injection, eval/exec, unsafe pickle, or formatted SQL patterns.
+- `react-pageflip` wrapper and `page-flip` 2.0.7 implementation inspected: settings are captured at construction; resize invokes render update and orientation recalculation; portrait activates below `2 * minWidth` (480px).
+
+Concerns:
+
+- `react-pageflip` still lacks unmount cleanup and PageFlip 2.0.7 owns an uncancellable RAF loop. This fix avoids orientation-created duplicate loops but cannot stop the single lifetime loop on route unmount without dependency replacement or patching.
+- Browser-level orientation visual test remains absent. Focused guards verify configuration and exact width threshold; library internals and production build verify expected responsive path.
