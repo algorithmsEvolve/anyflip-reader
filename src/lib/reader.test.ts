@@ -57,11 +57,25 @@ test("keeps one responsive PageFlip instance without manual destruction", () => 
   assert.doesNotMatch(source, /destroyFlipBook|\.destroy\(\)/);
 });
 
-test("caps portrait phone book width below spread threshold", () => {
-  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
-
-  assert.match(
-    css,
-    /@media \(max-width: 47\.9375rem\) and \(orientation: portrait\)[\s\S]*?\.flip-book \{\s*max-width: 479px !important;/,
+test("keeps portrait and narrow landscape on opposite sides of spread threshold", () => {
+  const source = readFileSync(
+    new URL("../components/book-reader.tsx", import.meta.url),
+    "utf8",
   );
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  const minWidth = Number(source.match(/minWidth=\{(\d+)\}/)?.[1]);
+  const portraitCap = Number(
+    css.match(
+      /@media \(max-width: 47\.9375rem\) and \(orientation: portrait\)[\s\S]*?\.flip-book \{\s*max-width: (\d+)px !important;/,
+    )?.[1],
+  );
+  const spreadThreshold = 2 * minWidth;
+  const portraitStageWidth = 320 - 2 * 12;
+  const landscapeStageWidth = 480 - 2 * 16;
+
+  assert.equal(minWidth, 220);
+  assert.equal(portraitCap, 439);
+  assert.ok(portraitCap < spreadThreshold);
+  assert.ok(portraitStageWidth < spreadThreshold);
+  assert.ok(landscapeStageWidth >= spreadThreshold);
 });

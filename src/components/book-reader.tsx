@@ -169,7 +169,7 @@ export default function BookReader({
           style={{}}
           width={600}
           height={800}
-          minWidth={240}
+          minWidth={220}
           maxWidth={600}
           minHeight={320}
           maxHeight={800}

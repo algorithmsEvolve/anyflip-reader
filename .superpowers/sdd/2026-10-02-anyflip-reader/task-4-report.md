@@ -196,3 +196,55 @@ Concerns:
 
 - `react-pageflip` still lacks unmount cleanup and PageFlip 2.0.7 owns an uncancellable RAF loop. This fix avoids orientation-created duplicate loops but cannot stop the single lifetime loop on route unmount without dependency replacement or patching.
 - Browser-level orientation visual test remains absent. Focused guards verify configuration and exact width threshold; library internals and production build verify expected responsive path.
+
+## Fix Round 3
+
+Status: complete.
+
+Changes:
+
+- Lowered PageFlip `minWidth` from 240px to 220px, moving automatic spread threshold from 480px to 440px.
+- Lowered portrait-only `.flip-book` cap from 479px to 439px, keeping every capped portrait book strictly below 440px threshold.
+- Kept stable `HTMLFlipBook` ref, `usePortrait={true}`, no keyed remount, no manual destroy, odd final-spread handling, and repeated-key suppression.
+- Replaced fixed CSS guard with source/CSS invariant test that extracts configured values and checks threshold math plus representative viewport calculations.
+
+Threshold evidence:
+
+```text
+PageFlip spread threshold: 2 * 220px = 440px
+320px portrait stage: 320px - (2 * 12px shell padding) = 296px < 440px
+Portrait CSS cap: 439px < 440px
+480px landscape stage: 480px - (2 * 16px shell padding) = 448px >= 440px
+```
+
+TDD evidence:
+
+```text
+RED focused test: 6 passed, 1 failed
+- expected minWidth 220; actual 240
+
+GREEN focused test: 7 passed, 0 failed
+```
+
+Verification:
+
+```text
+npm test          41 passed, 0 failed
+npx tsc --noEmit  exited 0
+npm run lint      exited 0
+npm run build     exited 0
+git diff --check  exited 0
+```
+
+Build routes remained:
+
+```text
+○ /
+ƒ /api/books/[publisherId]/[bookId]
+ƒ /read/[publisherId]/[bookId]
+```
+
+Concerns:
+
+- Browser-level orientation visual test remains absent. Invariant test covers PageFlip threshold and exact 320px portrait/480px landscape stage-width calculations; production build passed.
+- Existing dependency limitation remains: `react-pageflip` lacks unmount cleanup and PageFlip 2.0.7 owns an uncancellable RAF loop. One lifetime instance avoids orientation-created duplicates but cannot stop that loop without dependency patch/replacement.
