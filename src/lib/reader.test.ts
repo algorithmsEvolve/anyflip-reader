@@ -64,7 +64,6 @@ test("keeps portrait and narrow landscape on opposite sides of spread threshold"
   );
   const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   const minWidth = Number(source.match(/minWidth=\{(\d+)\}/)?.[1]);
-  const minHeight = Number(source.match(/minHeight=\{(\d+)\}/)?.[1]);
   const portraitCap = Number(
     css.match(
       /@media \(max-width: 47\.9375rem\) and \(orientation: portrait\)[\s\S]*?\.flip-book \{\s*max-width: (\d+)px !important;/,
@@ -79,14 +78,9 @@ test("keeps portrait and narrow landscape on opposite sides of spread threshold"
   assert.ok(portraitCap < spreadThreshold);
   assert.ok(portraitStageWidth < spreadThreshold);
   assert.ok(landscapeStageWidth >= spreadThreshold);
-  const shortLandscapeRule = css.match(
-    new RegExp(
-      `@media \\(max-height: ${minHeight + 144}px\\) and \\(orientation: landscape\\) and \\(hover: none\\) and \\(pointer: coarse\\) \\{[\\s\\S]*?\\.flip-book \\{[\\s\\S]*?height: calc\\(100dvh - (9rem)\\) !important;[\\s\\S]*?min-height: 0 !important;`,
-    ),
+  assert.match(
+    css,
+    /\.flip-book \{[\s\S]*?height: 100% !important;[\s\S]*?min-height: 0 !important;/,
   );
-  const availableHeight = 320 - 9 * 16;
-
-  assert.equal(shortLandscapeRule?.[1], "9rem");
-  assert.equal(availableHeight, 176);
-  assert.doesNotMatch(shortLandscapeRule?.[0] ?? "", /transform:/);
+  assert.doesNotMatch(css, /\.flip-book \{[^}]*transform:/);
 });
