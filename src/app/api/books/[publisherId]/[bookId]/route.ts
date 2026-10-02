@@ -29,6 +29,10 @@ export async function GET(_: Request, context: RouteContext) {
     console.error(
       "AnyFlip metadata fetch failed:",
       error instanceof Error ? error.message : String(error),
+      "cause:",
+      error instanceof Error && error.cause instanceof Error
+        ? error.cause.message.replace(/[\r\n]+/g, " ")
+        : "unknown",
     );
     return NextResponse.json(
       { error: "Unable to load book" },

@@ -136,8 +136,75 @@ test("fetches only the fixed AnyFlip config URL without headers or cache", async
     request?.input,
     "https://online.anyflip.com/abc/xyz/mobile/javascript/config.js",
   );
-  assert.deepEqual(request?.init, { cache: "no-store", signal });
+  assert.equal(request?.init?.cache, "no-store");
+  assert.equal(request?.init?.redirect, "manual");
+  assert.equal(request?.init?.signal instanceof AbortSignal, true);
   assert.equal(metadata.pageCount, 2);
+});
+
+test("combines caller cancellation with a mandatory timeout", async (t) => {
+  const caller = new AbortController();
+  const timeoutSignal = new AbortController().signal;
+  const timeoutMock = t.mock.method(AbortSignal, "timeout", () => timeoutSignal);
+  const anyMock = t.mock.method(AbortSignal, "any");
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () => new Response(configSource, { status: 200 }),
+  );
+
+  await fetchAnyFlipBook(identity, caller.signal);
+
+  assert.deepEqual(timeoutMock.mock.calls[0]?.arguments, [10_000]);
+  assert.deepEqual(anyMock.mock.calls[0]?.arguments, [
+    [caller.signal, timeoutSignal],
+  ]);
+});
+
+test("rejects upstream redirects", async (t) => {
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () => new Response(null, { status: 302 }),
+  );
+
+  await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
+});
+
+test("rejects oversized declared config before parsing", async (t) => {
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () =>
+      new Response(configSource, {
+        status: 200,
+        headers: { "content-length": String(MAX_CONFIG_BYTES + 1) },
+      }),
+  );
+
+  await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
+});
+
+test("cancels streamed config once byte limit is exceeded", async (t) => {
+  let cancelled = false;
+  const chunk = new Uint8Array(1_000_001);
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(chunk);
+      controller.enqueue(chunk);
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () => new Response(body, { status: 200 }),
+  );
+
+  await assert.rejects(fetchAnyFlipBook(identity), AnyFlipUpstreamError);
+  assert.equal(cancelled, true);
 });
 
 test("maps upstream 403 and 404 responses to not found", async (t) => {
@@ -193,8 +260,9 @@ test("route returns metadata", async (t) => {
   assert.deepEqual(await response.json(), parseAnyFlipConfig(configSource, identity));
 });
 
-test("route returns client-safe upstream errors", async (t) => {
-  t.mock.method(console, "error", () => {});
+test("route returns client-safe upstream errors and logs sanitized cause", async (t) => {
+  const logs: unknown[][] = [];
+  t.mock.method(console, "error", (...args: unknown[]) => logs.push(args));
   const fetchMock = t.mock.method(
     globalThis,
     "fetch",
@@ -210,4 +278,10 @@ test("route returns client-safe upstream errors", async (t) => {
   response = await GET(new Request("http://localhost"), routeContext("abc", "xyz"));
   assert.equal(response.status, 502);
   assert.deepEqual(await response.json(), { error: "Unable to load book" });
+  assert.deepEqual(logs.at(-1), [
+    "AnyFlip metadata fetch failed:",
+    "AnyFlip request failed",
+    "cause:",
+    "private network detail",
+  ]);
 });
