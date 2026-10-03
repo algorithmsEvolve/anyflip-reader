@@ -54,8 +54,8 @@ The script exits nonzero on failed assertions. Final run exited 0.
 
 Every viewport passed:
 
-- book within stage
-- every visible page within stage
+- book contained within all four stage edges
+- every visible page contained within all four stage edges
 - controls below stage
 - no horizontal or vertical document overflow
 - identity transform only
@@ -63,6 +63,7 @@ Every viewport passed:
 
 ### Interactions
 
+- Valid landing submission navigates to canonical `/read/iehyo/byxp?page=1` and loads `1 of 324`
 - Previous updates page and URL
 - Jump to page 120 updates status and `?page=120`
 - Reload restores page 120
