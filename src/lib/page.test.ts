@@ -16,5 +16,7 @@ test("clamps pages above page count", () => {
 });
 
 test("defaults invalid pages to one", () => {
-  assert.equal(normalizePage("wat", 324), 1);
+  for (const value of ["wat", "37junk", "1.5", "1e2", " 37", "37 ", "", "+37", "-1"]) {
+    assert.equal(normalizePage(value, 324), 1, value);
+  }
 });

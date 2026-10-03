@@ -10,6 +10,8 @@ export type BookMetadata = {
 };
 
 export const MAX_CONFIG_BYTES = 2_000_000;
+// Bounds DOM nodes and image URLs well below the 2 MB config input ceiling.
+export const MAX_PAGE_COUNT = 500;
 
 export class AnyFlipNotFoundError extends Error {}
 export class AnyFlipUpstreamError extends Error {}
@@ -188,6 +190,7 @@ function isConfig(value: unknown): value is {
   return (
     Array.isArray(pages) &&
     pages.length > 0 &&
+    pages.length <= MAX_PAGE_COUNT &&
     pages.every(
       (page) =>
         typeof page === "object" &&

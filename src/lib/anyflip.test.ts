@@ -6,6 +6,7 @@ import {
   AnyFlipNotFoundError,
   AnyFlipUpstreamError,
   MAX_CONFIG_BYTES,
+  MAX_PAGE_COUNT,
   fetchAnyFlipBook,
   isValidBookId,
   parseAnyFlipConfig,
@@ -89,6 +90,18 @@ test("rejects config over the byte limit", () => {
   assert.throws(() =>
     parseAnyFlipConfig("x".repeat(MAX_CONFIG_BYTES + 1), identity),
   );
+});
+
+test("accepts the page-count ceiling and rejects overflow", () => {
+  const source = (count: number) => `var htmlConfig = ${JSON.stringify({
+    fliphtml5_pages: Array.from({ length: count }, (_, index) => ({
+      n: [`../files/mobile/${index + 1}.webp`],
+    })),
+  })};`;
+
+  assert.equal(parseAnyFlipConfig(source(MAX_PAGE_COUNT), identity).pageCount, MAX_PAGE_COUNT);
+  assert.throws(() => parseAnyFlipConfig(source(MAX_PAGE_COUNT + 1), identity));
+  assert.ok(MAX_PAGE_COUNT >= 324);
 });
 
 test("rejects external page URLs", () => {
@@ -359,16 +372,26 @@ test("route rejects invalid IDs without fetching", async (t) => {
   assert.equal(fetchMock.mock.callCount(), 0);
 });
 
-test("route returns metadata", async (t) => {
+test("route returns metadata and forwards request cancellation", async (t) => {
+  const controller = new AbortController();
+  let upstreamSignal: AbortSignal | null | undefined;
   t.mock.method(
     globalThis,
     "fetch",
-    async () => new Response(configSource, { status: 200 }),
+    async (_input: string | URL | Request, init?: RequestInit) => {
+      upstreamSignal = init?.signal;
+      return new Response(configSource, { status: 200 });
+    },
   );
-  const response = await GET(new Request("http://localhost"), routeContext("abc", "xyz"));
+  const response = await GET(
+    new Request("http://localhost", { signal: controller.signal }),
+    routeContext("abc", "xyz"),
+  );
 
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), parseAnyFlipConfig(configSource, identity));
+  controller.abort();
+  assert.equal(upstreamSignal?.aborted, true);
 });
 
 test("route returns client-safe upstream errors and logs sanitized cause", async (t) => {

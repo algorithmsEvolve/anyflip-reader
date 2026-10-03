@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { getBookMetadata, isLastSpread, isTypingTarget } from "./reader";
+import {
+  canonicalPage,
+  getBookMetadata,
+  isLastSpread,
+  isTypingTarget,
+} from "./reader";
 
 test("accepts complete book metadata", () => {
   assert.deepEqual(
@@ -42,6 +47,57 @@ test("recognizes final landscape spread while preserving its leading page", () =
   assert.equal(isLastSpread(6, 6, false), true);
   assert.equal(isLastSpread(4, 5, true), false);
   assert.equal(isLastSpread(5, 5, true), true);
+});
+
+test("uses visible leading page in landscape and exact page in portrait", () => {
+  assert.equal(canonicalPage(1, false), 1);
+  assert.equal(canonicalPage(2, false), 2);
+  assert.equal(canonicalPage(3, false), 2);
+  assert.equal(canonicalPage(37, false), 36);
+  assert.equal(canonicalPage(37, true), 37);
+});
+
+test("canonicalizes load, flips, jumps, and orientation without remounting", () => {
+  const source = readFileSync(
+    new URL("../components/book-reader.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /const setVisiblePage = useCallback/);
+  assert.match(source, /const visiblePage = canonicalPage\(page, isPortraitRef\.current\)/);
+  assert.match(source, /startPage = canonicalPage\(/);
+  assert.match(source, /setVisiblePage\(event\.data \+ 1\)/);
+  assert.match(source, /setVisiblePage\(currentPageRef\.current, portrait\)/);
+  assert.doesNotMatch(source, /orientation[^\n]*key|key[^\n]*orientation/i);
+});
+
+test("keeps lazy async images and memoized PageFlip children", () => {
+  const reader = readFileSync(
+    new URL("../components/book-reader.tsx", import.meta.url),
+    "utf8",
+  );
+  const page = readFileSync(
+    new URL("../components/book-page.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(page, /loading="lazy"/);
+  assert.match(page, /decoding="async"/);
+  assert.match(reader, /const pages = useMemo\(/);
+  assert.match(reader, /\{pages\}/);
+  assert.doesNotMatch(reader, /\{metadata\.pages\.map/);
+});
+
+test("uses PageFlip minimum reduced-motion timing without remounting", () => {
+  const source = readFileSync(
+    new URL("../components/book-reader.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /REDUCED_MOTION_FLIPPING_TIME = 1/);
+  assert.match(source, /flippingTime=\{flippingTime\}/);
+  assert.match(source, /settings\.flippingTime = nextFlippingTime/);
+  assert.match(source, /matchMedia\(REDUCED_MOTION_QUERY\)/);
 });
 
 test("keeps one responsive PageFlip instance without manual destruction", () => {

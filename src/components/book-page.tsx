@@ -37,6 +37,8 @@ export const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
             className={`page-image ${status === "loading" ? "is-loading" : ""}`}
             src={imageUrl}
             alt={`Page ${pageNumber}`}
+            loading="lazy"
+            decoding="async"
             draggable={false}
             onLoad={() => setStatus("loaded")}
             onError={() => setStatus("error")}

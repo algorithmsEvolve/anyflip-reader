@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import HTMLFlipBook from "react-pageflip";
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BookPage } from "@/components/book-page";
 import type { BookMetadata } from "@/lib/anyflip";
 import { normalizePage } from "@/lib/page";
-import { getBookMetadata, isLastSpread, isTypingTarget } from "@/lib/reader";
+import {
+  canonicalPage,
+  getBookMetadata,
+  isLastSpread,
+  isTypingTarget,
+} from "@/lib/reader";
 
 type BookReaderProps = {
   publisherId: string;
@@ -19,11 +24,15 @@ type FlipBookHandle = {
   pageFlip(): {
     flipNext(): void;
     flipPrev(): void;
+    getSettings(): { flippingTime: number };
     turnToPage(page: number): void;
   };
 };
 
 const PORTRAIT_QUERY = "(orientation: portrait) and (max-width: 767px)";
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const REDUCED_MOTION_FLIPPING_TIME = 1;
+const DEFAULT_FLIPPING_TIME = 600;
 
 function replacePageInUrl(page: number) {
   const url = new URL(window.location.href);
@@ -41,15 +50,46 @@ export default function BookReader({
   const [attempt, setAttempt] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [jumpPage, setJumpPage] = useState("1");
-  const [isPortrait, setIsPortrait] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia(PORTRAIT_QUERY).matches,
+  );
+  const [flippingTime, setFlippingTime] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia(REDUCED_MOTION_QUERY).matches
+      ? REDUCED_MOTION_FLIPPING_TIME
+      : DEFAULT_FLIPPING_TIME,
+  );
+  const isPortraitRef = useRef(isPortrait);
+  const currentPageRef = useRef(1);
   const bookRef = useRef<FlipBookHandle | null>(null);
+  const pages = useMemo(
+    () => metadata?.pages.map((src, index) => (
+      <BookPage key={src} src={src} pageNumber={index + 1} />
+    )) ?? [],
+    [metadata],
+  );
 
   useEffect(() => {
     const media = window.matchMedia(PORTRAIT_QUERY);
-    const updateMode = () => setIsPortrait(media.matches);
-    updateMode();
+    const updateMode = () => {
+      isPortraitRef.current = media.matches;
+      setIsPortrait(media.matches);
+    };
     media.addEventListener("change", updateMode);
     return () => media.removeEventListener("change", updateMode);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia(REDUCED_MOTION_QUERY);
+    const updateMotion = () => {
+      const nextFlippingTime = media.matches
+        ? REDUCED_MOTION_FLIPPING_TIME
+        : DEFAULT_FLIPPING_TIME;
+      setFlippingTime(nextFlippingTime);
+      const settings = bookRef.current?.pageFlip().getSettings();
+      if (settings) settings.flippingTime = nextFlippingTime;
+    };
+    media.addEventListener("change", updateMotion);
+    return () => media.removeEventListener("change", updateMotion);
   }, []);
 
   useEffect(() => {
@@ -73,9 +113,11 @@ export default function BookReader({
       })
       .then((book) => {
         const page = normalizePage(initialPage, book.pageCount);
-        setCurrentPage(page);
-        setJumpPage(String(page));
-        replacePageInUrl(page);
+        const visiblePage = canonicalPage(page, isPortraitRef.current);
+        currentPageRef.current = visiblePage;
+        setCurrentPage(visiblePage);
+        setJumpPage(String(visiblePage));
+        replacePageInUrl(visiblePage);
         setMetadata(book);
       })
       .catch((cause: unknown) => {
@@ -87,16 +129,23 @@ export default function BookReader({
     return () => controller.abort();
   }, [publisherId, bookId, initialPage, attempt]);
 
+  const setVisiblePage = useCallback((page: number, portrait = isPortraitRef.current) => {
+    const visiblePage = canonicalPage(page, portrait);
+    currentPageRef.current = visiblePage;
+    setCurrentPage(visiblePage);
+    setJumpPage(String(visiblePage));
+    replacePageInUrl(visiblePage);
+  }, []);
+
   const showPage = useCallback(
     (page: number) => {
       if (!metadata) return;
       const normalized = normalizePage(String(page), metadata.pageCount);
-      bookRef.current?.pageFlip().turnToPage(normalized - 1);
-      setCurrentPage(normalized);
-      setJumpPage(String(normalized));
-      replacePageInUrl(normalized);
+      const visiblePage = canonicalPage(normalized, isPortraitRef.current);
+      bookRef.current?.pageFlip().turnToPage(visiblePage - 1);
+      setVisiblePage(visiblePage);
     },
-    [metadata],
+    [metadata, setVisiblePage],
   );
 
   const previous = useCallback(() => bookRef.current?.pageFlip().flipPrev(), []);
@@ -148,7 +197,10 @@ export default function BookReader({
 
   if (!metadata) return null;
 
-  const startPage = normalizePage(initialPage, metadata.pageCount) - 1;
+  const startPage = canonicalPage(
+    normalizePage(initialPage, metadata.pageCount),
+    isPortrait,
+  ) - 1;
 
   const submitJump = (event: FormEvent) => {
     event.preventDefault();
@@ -176,7 +228,7 @@ export default function BookReader({
           size="stretch"
           startPage={startPage}
           drawShadow
-          flippingTime={600}
+          flippingTime={flippingTime}
           usePortrait={true}
           startZIndex={0}
           autoSize
@@ -189,15 +241,16 @@ export default function BookReader({
           showPageCorners
           disableFlipByClick={false}
           onFlip={(event: { data: number }) => {
-            const page = event.data + 1;
-            setCurrentPage(page);
-            setJumpPage(String(page));
-            replacePageInUrl(page);
+            setVisiblePage(event.data + 1);
+          }}
+          onChangeOrientation={(event: { data: "portrait" | "landscape" }) => {
+            const portrait = event.data === "portrait";
+            isPortraitRef.current = portrait;
+            setIsPortrait(portrait);
+            setVisiblePage(currentPageRef.current, portrait);
           }}
         >
-          {metadata.pages.map((src, index) => (
-            <BookPage key={src} src={src} pageNumber={index + 1} />
-          ))}
+          {pages}
         </HTMLFlipBook>
       </section>
 

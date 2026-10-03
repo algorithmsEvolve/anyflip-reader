@@ -38,6 +38,10 @@ export function isTypingTarget(target: KeyboardTarget | null): boolean {
   );
 }
 
+export function canonicalPage(page: number, isPortrait: boolean): number {
+  return isPortrait || page <= 1 || page % 2 === 0 ? page : page - 1;
+}
+
 export function isLastSpread(
   currentPage: number,
   pageCount: number,

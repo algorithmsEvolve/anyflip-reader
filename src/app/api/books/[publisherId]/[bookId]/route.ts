@@ -10,7 +10,7 @@ type RouteContext = {
   params: Promise<{ publisherId: string; bookId: string }>;
 };
 
-export async function GET(_: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const identity = await context.params;
   if (
     !isValidBookId(identity.publisherId) ||
@@ -20,7 +20,7 @@ export async function GET(_: Request, context: RouteContext) {
   }
 
   try {
-    return NextResponse.json(await fetchAnyFlipBook(identity));
+    return NextResponse.json(await fetchAnyFlipBook(identity, request.signal));
   } catch (error) {
     if (error instanceof AnyFlipNotFoundError) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });
