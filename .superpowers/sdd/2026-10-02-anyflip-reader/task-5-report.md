@@ -64,6 +64,7 @@ Every viewport passed:
 ### Interactions
 
 - Valid landing submission navigates to canonical `/read/iehyo/byxp?page=1` and loads `1 of 324`
+- Desktop odd bookmark `?page=37` canonicalizes to visible leading page `?page=36`
 - Previous updates page and URL
 - Jump to page 120 updates status and `?page=120`
 - Reload restores page 120
@@ -71,6 +72,8 @@ Every viewport passed:
 - Pointer Next changes 36 to 38
 - Portrait swipe changes 37 to 38
 - Rotation preserves `?page=38` and switches wrapper to landscape
+- Lazy loading requested 10 of 324 page images during initial desktop load
+- Reduced-motion page turn completed in 114 ms
 - Previous disabled at first page
 - Next disabled at last page
 
@@ -99,6 +102,6 @@ Fresh screenshots and JSON are under:
 
 ## Concerns
 
-- Reader mounts all 324 page elements; large-book performance was not profiled.
-- `react-pageflip` retains one dependency-owned RAF loop for reader lifetime. Orientation changes do not accumulate instances.
+- Reader caps books at 500 pages; page elements remain mounted but images use native lazy loading.
+- `react-pageflip` retains one dependency-owned RAF loop for reader lifetime. Orientation changes do not accumulate instances; manual teardown is unsafe because dependency removal conflicts with React-owned DOM.
 - AnyFlip remains an external upstream dependency.
