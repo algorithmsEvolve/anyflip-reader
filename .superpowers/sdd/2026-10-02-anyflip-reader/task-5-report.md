@@ -21,7 +21,7 @@ This replaces the narrow short-landscape-only workaround. PageFlip retains nativ
 
 ## Static gates
 
-- `npm test`: PASS, 41/41
+- `npm test`: PASS, 46/46
 - `npx tsc --noEmit`: PASS
 - `npm run lint`: PASS
 - `npm run build`: PASS
@@ -71,9 +71,9 @@ Every viewport passed:
 - ArrowRight and ArrowLeft navigate
 - Pointer Next changes 36 to 38
 - Portrait swipe changes 37 to 38
-- Rotation preserves `?page=38` and switches wrapper to landscape
-- Lazy loading requested 10 of 324 page images during initial desktop load
-- Reduced-motion page turn completed in 114 ms
+- Rotation canonicalizes portrait page 37 to landscape leading page 36, shows pages 36–37, and reload restores the same spread
+- Lazy loading requested 11 of 324 page images during initial desktop load
+- Reduced-motion page turn completed in 213 ms
 - Previous disabled at first page
 - Next disabled at last page
 
