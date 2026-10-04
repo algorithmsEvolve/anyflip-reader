@@ -347,7 +347,7 @@ export default function BookReader({
             if (event.data !== "read") return;
             isFlippingRef.current = false;
             if (requestedPageRef.current !== currentPageRef.current) {
-              showPage(requestedPageRef.current);
+              window.setTimeout(() => showPage(requestedPageRef.current), 0);
             }
           }}
           onChangeOrientation={(event: { data: "portrait" | "landscape" }) => {

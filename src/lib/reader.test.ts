@@ -148,7 +148,14 @@ test("keeps reader chrome hidden until the book is pressed", () => {
   assert.match(source, /requestedPageRef\.current = visiblePage/);
   assert.match(source, /if \(isFlippingRef\.current \|\| visiblePage === currentPageRef\.current\) return/);
   assert.match(source, /onChangeState=/);
-  assert.match(source, /showPage\(requestedPageRef\.current\)/);
+  assert.match(
+    source,
+    /window\.setTimeout\(\(\) => showPage\(requestedPageRef\.current\), 0\)/,
+  );
+  assert.doesNotMatch(
+    source,
+    /if \(requestedPageRef\.current !== currentPageRef\.current\) \{\s*showPage/,
+  );
   assert.match(source, /disableFlipByClick=\{false\}/);
   assert.match(source, /window\.setTimeout\(hideChrome, CHROME_HIDE_DELAY\)/);
   assert.match(source, /onPointerDown=\{revealChrome\}/);
