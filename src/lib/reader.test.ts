@@ -3,12 +3,20 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  adjustZoom,
   canonicalPage,
   classifyHorizontalGesture,
   getBookMetadata,
   isLastSpread,
   isTypingTarget,
 } from "./reader";
+
+test("adjusts zoom in two percent steps within safe bounds", () => {
+  assert.equal(adjustZoom(100, -1), 98);
+  assert.equal(adjustZoom(100, 1), 102);
+  assert.equal(adjustZoom(50, -1), 50);
+  assert.equal(adjustZoom(200, 1), 200);
+});
 
 test("distinguishes taps from horizontal swipes", () => {
   assert.equal(classifyHorizontalGesture(100, 104), "tap");
@@ -161,6 +169,23 @@ test("uses floating safe-area-aware controls on mobile", () => {
   assert.match(css, /bottom: max\([^;]*env\(safe-area-inset-bottom\)/);
   assert.match(css, /@media \(max-width: 47\.9375rem\)[\s\S]*?\.reader-controls/);
   assert.match(css, /min-height: 2\.75rem/);
+});
+
+test("provides two-percent zoom controls without resizing PageFlip", () => {
+  const source = readFileSync(
+    new URL("../components/book-reader.tsx", import.meta.url),
+    "utf8",
+  );
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(source, /const \[zoom, setZoom\] = useState\(100\)/);
+  assert.match(source, /adjustZoom\(value, -1\)/);
+  assert.match(source, /adjustZoom\(value, 1\)/);
+  assert.match(source, /aria-label="Zoom out"/);
+  assert.match(source, /aria-label="Zoom in"/);
+  assert.match(source, /\{zoom\}%/);
+  assert.match(source, /transform: `scale\(\$\{zoom \/ 100\}\)`/);
+  assert.match(css, /\.book-zoom \{[\s\S]*?transform-origin: center;/);
 });
 
 test("keeps portrait and narrow landscape on opposite sides of spread threshold", () => {

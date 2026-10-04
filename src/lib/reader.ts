@@ -38,6 +38,10 @@ export function isTypingTarget(target: KeyboardTarget | null): boolean {
   );
 }
 
+export function adjustZoom(zoom: number, direction: -1 | 1): number {
+  return Math.min(200, Math.max(50, zoom + direction * 2));
+}
+
 export function canonicalPage(page: number, isPortrait: boolean): number {
   return isPortrait || page <= 1 || page % 2 === 0 ? page : page - 1;
 }

@@ -16,6 +16,7 @@ import { BookPage } from "@/components/book-page";
 import type { BookMetadata } from "@/lib/anyflip";
 import { normalizePage } from "@/lib/page";
 import {
+  adjustZoom,
   canonicalPage,
   classifyHorizontalGesture,
   getBookMetadata,
@@ -58,6 +59,7 @@ export default function BookReader({
   const [attempt, setAttempt] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [jumpPage, setJumpPage] = useState("1");
+  const [zoom, setZoom] = useState(100);
   const [chromeVisible, setChromeVisible] = useState(false);
   const [isPortrait, setIsPortrait] = useState(() =>
     typeof window !== "undefined" && window.matchMedia(PORTRAIT_QUERY).matches,
@@ -309,6 +311,10 @@ export default function BookReader({
         role="button"
         tabIndex={0}
       >
+        <div
+          className="book-zoom"
+          style={{ transform: `scale(${zoom / 100})` }}
+        >
         <HTMLFlipBook
           ref={bookRef}
           className="flip-book"
@@ -353,6 +359,7 @@ export default function BookReader({
         >
           {pages}
         </HTMLFlipBook>
+        </div>
       </section>
 
       <footer
@@ -362,12 +369,32 @@ export default function BookReader({
         onPointerDown={revealChrome}
       >
         <button
+          className="reader-previous"
           type="button"
           onClick={previous}
           disabled={currentPage <= 1}
         >
           Previous
         </button>
+        <div className="zoom-controls" aria-label="Zoom controls">
+          <button
+            type="button"
+            aria-label="Zoom out"
+            onClick={() => setZoom((value) => adjustZoom(value, -1))}
+            disabled={zoom <= 50}
+          >
+            −
+          </button>
+          <output aria-live="polite">{zoom}%</output>
+          <button
+            type="button"
+            aria-label="Zoom in"
+            onClick={() => setZoom((value) => adjustZoom(value, 1))}
+            disabled={zoom >= 200}
+          >
+            +
+          </button>
+        </div>
         <form onSubmit={submitJump} className="page-jump">
           <label htmlFor="page-jump">Page</label>
           <input
@@ -388,6 +415,7 @@ export default function BookReader({
           {currentPage} of {metadata.pageCount}
         </p>
         <button
+          className="reader-next"
           type="button"
           onClick={next}
           disabled={isLastSpread(currentPage, metadata.pageCount, isPortrait)}
