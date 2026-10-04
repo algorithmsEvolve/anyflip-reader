@@ -5,3 +5,4 @@ out/
 !.env.example
 .worktrees/
 .superpowers/
+supabase/.temp/

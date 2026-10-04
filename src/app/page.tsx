@@ -1,10 +1,29 @@
-import { BookUrlForm } from "@/components/book-url-form";
+import Link from "next/link";
 
-export default function Home() {
+import { BookUrlForm } from "@/components/book-url-form";
+import { createServerClient } from "@/lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createServerClient();
+  const { data } = await supabase.auth.getUser();
+
   return (
     <main className="landing">
+      <nav className="site-nav" aria-label="Account">
+        <span className="wordmark">Pagekeeper</span>
+        <div className="site-nav-links">
+          {data.user ? (
+            <Link href="/library">Library</Link>
+          ) : (
+            <>
+              <Link href="/login">Log in</Link>
+              <Link href="/register">Create account</Link>
+            </>
+          )}
+        </div>
+      </nav>
+
       <section className="landing-copy" aria-labelledby="page-title">
-        <p className="wordmark">Pagekeeper</p>
         <h1 id="page-title">Keep the book.<br />Lose the clutter.</h1>
         <p className="introduction">
           Paste an AnyFlip link to open its pages in a focused reader with a

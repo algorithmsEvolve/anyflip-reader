@@ -23,6 +23,7 @@ import {
   isLastSpread,
   isTypingTarget,
 } from "@/lib/reader";
+import { useReadingProgress } from "@/lib/use-reading-progress";
 
 type BookReaderProps = {
   publisherId: string;
@@ -82,6 +83,12 @@ export default function BookReader({
     )) ?? [],
     [metadata],
   );
+  const { saveError } = useReadingProgress({
+    publisherId,
+    bookId,
+    page: currentPage,
+    pageCount: metadata?.pageCount ?? 1,
+  });
 
   useEffect(() => {
     const media = window.matchMedia(PORTRAIT_QUERY);
@@ -420,6 +427,7 @@ export default function BookReader({
         <p className="page-status" aria-live="polite" aria-atomic="true">
           {currentPage} of {metadata.pageCount}
         </p>
+        {saveError ? <p className="save-error" role="status">{saveError}</p> : null}
         <button
           className="reader-next"
           type="button"
