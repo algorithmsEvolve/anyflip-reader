@@ -188,6 +188,8 @@ test("provides two-percent zoom controls without resizing PageFlip", () => {
   assert.match(source, /const \[zoom, setZoom\] = useState\(100\)/);
   assert.match(source, /adjustZoom\(value, -1\)/);
   assert.match(source, /adjustZoom\(value, 1\)/);
+  assert.match(source, /event\.key === "ArrowUp"[\s\S]*?adjustZoom\(value, 1\)/);
+  assert.match(source, /event\.key === "ArrowDown"[\s\S]*?adjustZoom\(value, -1\)/);
   assert.match(source, /aria-label="Zoom out"/);
   assert.match(source, /aria-label="Zoom in"/);
   assert.match(source, /\{zoom\}%/);

@@ -240,6 +240,12 @@ export default function BookReader({
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
         next();
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setZoom((value) => adjustZoom(value, 1));
+      } else if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setZoom((value) => adjustZoom(value, -1));
       }
     };
     window.addEventListener("keydown", onKeyDown);
