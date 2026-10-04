@@ -31,8 +31,8 @@ type BookReaderProps = {
 
 type FlipBookHandle = {
   pageFlip(): {
+    flip(page: number): void;
     getSettings(): { flippingTime: number };
-    turnToPage(page: number): void;
   };
 };
 
@@ -69,6 +69,8 @@ export default function BookReader({
   );
   const isPortraitRef = useRef(isPortrait);
   const currentPageRef = useRef(1);
+  const requestedPageRef = useRef(1);
+  const isFlippingRef = useRef(false);
   const bookRef = useRef<FlipBookHandle | null>(null);
   const chromeTimerRef = useRef<number | null>(null);
   const gestureRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
@@ -126,6 +128,7 @@ export default function BookReader({
         const page = normalizePage(initialPage, book.pageCount);
         const visiblePage = canonicalPage(page, isPortraitRef.current);
         currentPageRef.current = visiblePage;
+        requestedPageRef.current = visiblePage;
         setCurrentPage(visiblePage);
         setJumpPage(String(visiblePage));
         replacePageInUrl(visiblePage);
@@ -153,18 +156,20 @@ export default function BookReader({
       if (!metadata) return;
       const normalized = normalizePage(String(page), metadata.pageCount);
       const visiblePage = canonicalPage(normalized, isPortraitRef.current);
-      bookRef.current?.pageFlip().turnToPage(visiblePage - 1);
-      setVisiblePage(visiblePage);
+      requestedPageRef.current = visiblePage;
+      if (isFlippingRef.current || visiblePage === currentPageRef.current) return;
+      isFlippingRef.current = true;
+      bookRef.current?.pageFlip().flip(visiblePage - 1);
     },
-    [metadata, setVisiblePage],
+    [metadata],
   );
 
   const previous = useCallback(
-    () => showPage(currentPageRef.current - (isPortraitRef.current ? 1 : 2)),
+    () => showPage(requestedPageRef.current - (isPortraitRef.current ? 1 : 2)),
     [showPage],
   );
   const next = useCallback(
-    () => showPage(currentPageRef.current + (isPortraitRef.current ? 1 : 2)),
+    () => showPage(requestedPageRef.current + (isPortraitRef.current ? 1 : 2)),
     [showPage],
   );
 
@@ -328,9 +333,16 @@ export default function BookReader({
           useMouseEvents={false}
           swipeDistance={30}
           showPageCorners
-          disableFlipByClick={true}
+          disableFlipByClick={false}
           onFlip={(event: { data: number }) => {
             setVisiblePage(event.data + 1);
+          }}
+          onChangeState={(event: { data: string }) => {
+            if (event.data !== "read") return;
+            isFlippingRef.current = false;
+            if (requestedPageRef.current !== currentPageRef.current) {
+              showPage(requestedPageRef.current);
+            }
           }}
           onChangeOrientation={(event: { data: "portrait" | "landscape" }) => {
             const portrait = event.data === "portrait";
