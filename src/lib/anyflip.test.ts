@@ -116,6 +116,15 @@ test("rejects invalid identities before building page URLs", () => {
   );
 });
 
+test("supports hashed AnyFlip page names", () => {
+  const source =
+    'var htmlConfig = {"fliphtml5_pages":[{"n":["d52587b0b549081b40d5061df2fb95eb.webp"]}]};';
+
+  assert.deepEqual(parseAnyFlipConfig(source, identity).pages, [
+    "https://online.anyflip.com/abc/xyz/files/large/d52587b0b549081b40d5061df2fb95eb.webp",
+  ]);
+});
+
 test("rejects non-WebP page paths", () => {
   const source =
     'var htmlConfig = {"fliphtml5_pages":[{"n":["../files/mobile/1.jpg"]}]};';

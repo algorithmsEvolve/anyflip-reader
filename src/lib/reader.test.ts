@@ -113,6 +113,38 @@ test("keeps one responsive PageFlip instance without manual destruction", () => 
   assert.doesNotMatch(source, /destroyFlipBook|\.destroy\(\)/);
 });
 
+test("keeps reader chrome hidden until the book is pressed", () => {
+  const source = readFileSync(
+    new URL("../components/book-reader.tsx", import.meta.url),
+    "utf8",
+  );
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(source, /useState\(false\)/);
+  assert.match(source, /onPointerDown=\{toggleChrome\}/);
+  assert.doesNotMatch(source, /className="reader-controls"[\s\S]{0,160}onPointerDown/);
+  assert.match(source, /showPage\(currentPage - \(isPortrait \? 1 : 2\)\)/);
+  assert.match(source, /showPage\(currentPage \+ \(isPortrait \? 1 : 2\)\)/);
+  assert.doesNotMatch(source, /\.flipPrev\(\)|\.flipNext\(\)/);
+  assert.match(source, /disableFlipByClick=\{true\}/);
+  assert.match(source, /window\.setTimeout\(hideChrome, CHROME_HIDE_DELAY\)/);
+  assert.match(source, /reader-shell \$\{chromeVisible \? "is-chrome-visible" : ""\}/);
+  assert.match(source, /inert=\{!chromeVisible \? true : undefined\}/);
+  assert.match(css, /\.reader-header,[\s\S]*?\.reader-controls \{[\s\S]*?visibility: hidden;/);
+  assert.match(css, /\.reader-shell\.is-chrome-visible \.reader-header/);
+  assert.match(css, /\.reader-shell\.is-chrome-visible \.reader-controls/);
+  assert.doesNotMatch(css, /\.reader-shell\.is-chrome-visible \.flip-book/);
+});
+
+test("uses floating safe-area-aware controls on mobile", () => {
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(css, /\.reader-controls \{[\s\S]*?position: absolute;/);
+  assert.match(css, /bottom: max\([^;]*env\(safe-area-inset-bottom\)/);
+  assert.match(css, /@media \(max-width: 47\.9375rem\)[\s\S]*?\.reader-controls/);
+  assert.match(css, /min-height: 2\.75rem/);
+});
+
 test("keeps portrait and narrow landscape on opposite sides of spread threshold", () => {
   const source = readFileSync(
     new URL("../components/book-reader.tsx", import.meta.url),

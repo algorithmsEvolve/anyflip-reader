@@ -22,8 +22,6 @@ type BookReaderProps = {
 
 type FlipBookHandle = {
   pageFlip(): {
-    flipNext(): void;
-    flipPrev(): void;
     getSettings(): { flippingTime: number };
     turnToPage(page: number): void;
   };
@@ -33,6 +31,7 @@ const PORTRAIT_QUERY = "(orientation: portrait) and (max-width: 767px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const REDUCED_MOTION_FLIPPING_TIME = 1;
 const DEFAULT_FLIPPING_TIME = 600;
+const CHROME_HIDE_DELAY = 3_500;
 
 function replacePageInUrl(page: number) {
   const url = new URL(window.location.href);
@@ -50,6 +49,7 @@ export default function BookReader({
   const [attempt, setAttempt] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [jumpPage, setJumpPage] = useState("1");
+  const [chromeVisible, setChromeVisible] = useState(false);
   const [isPortrait, setIsPortrait] = useState(() =>
     typeof window !== "undefined" && window.matchMedia(PORTRAIT_QUERY).matches,
   );
@@ -61,6 +61,7 @@ export default function BookReader({
   const isPortraitRef = useRef(isPortrait);
   const currentPageRef = useRef(1);
   const bookRef = useRef<FlipBookHandle | null>(null);
+  const chromeTimerRef = useRef<number | null>(null);
   const pages = useMemo(
     () => metadata?.pages.map((src, index) => (
       <BookPage key={src} src={src} pageNumber={index + 1} />
@@ -148,8 +149,37 @@ export default function BookReader({
     [metadata, setVisiblePage],
   );
 
-  const previous = useCallback(() => bookRef.current?.pageFlip().flipPrev(), []);
-  const next = useCallback(() => bookRef.current?.pageFlip().flipNext(), []);
+  const previous = useCallback(
+    () => showPage(currentPage - (isPortrait ? 1 : 2)),
+    [currentPage, isPortrait, showPage],
+  );
+  const next = useCallback(
+    () => showPage(currentPage + (isPortrait ? 1 : 2)),
+    [currentPage, isPortrait, showPage],
+  );
+
+  const hideChrome = useCallback(() => {
+    setChromeVisible(false);
+    if (chromeTimerRef.current !== null) {
+      window.clearTimeout(chromeTimerRef.current);
+      chromeTimerRef.current = null;
+    }
+  }, []);
+
+  const revealChrome = useCallback(() => {
+    if (chromeTimerRef.current !== null) window.clearTimeout(chromeTimerRef.current);
+    setChromeVisible(true);
+    chromeTimerRef.current = window.setTimeout(hideChrome, CHROME_HIDE_DELAY);
+  }, [hideChrome]);
+
+  const toggleChrome = useCallback(() => {
+    if (chromeVisible) hideChrome();
+    else revealChrome();
+  }, [chromeVisible, hideChrome, revealChrome]);
+
+  useEffect(() => () => {
+    if (chromeTimerRef.current !== null) window.clearTimeout(chromeTimerRef.current);
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -208,13 +238,25 @@ export default function BookReader({
   };
 
   return (
-    <main className="reader-shell">
-      <header className="reader-header">
+    <main className={`reader-shell ${chromeVisible ? "is-chrome-visible" : ""}`}>
+      <header className="reader-header" inert={!chromeVisible ? true : undefined}>
         <Link href="/" className="reader-back">Pagekeeper</Link>
         <h1>{metadata.title}</h1>
       </header>
 
-      <section className="book-stage" aria-label={`${metadata.title} pages`}>
+      <section
+        className="book-stage"
+        aria-label={`${metadata.title} pages. Press to show or hide reader controls.`}
+        onPointerDown={toggleChrome}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggleChrome();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+      >
         <HTMLFlipBook
           ref={bookRef}
           className="flip-book"
@@ -239,7 +281,7 @@ export default function BookReader({
           useMouseEvents
           swipeDistance={30}
           showPageCorners
-          disableFlipByClick={false}
+          disableFlipByClick={true}
           onFlip={(event: { data: number }) => {
             setVisiblePage(event.data + 1);
           }}
@@ -254,8 +296,18 @@ export default function BookReader({
         </HTMLFlipBook>
       </section>
 
-      <footer className="reader-controls" aria-label="Reader controls">
-        <button type="button" onClick={previous} disabled={currentPage <= 1}>Previous</button>
+      <footer
+        className="reader-controls"
+        aria-label="Reader controls"
+        inert={!chromeVisible ? true : undefined}
+      >
+        <button
+          type="button"
+          onClick={previous}
+          disabled={currentPage <= 1}
+        >
+          Previous
+        </button>
         <form onSubmit={submitJump} className="page-jump">
           <label htmlFor="page-jump">Page</label>
           <input

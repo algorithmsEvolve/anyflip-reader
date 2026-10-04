@@ -18,7 +18,8 @@ export class AnyFlipUpstreamError extends Error {}
 
 const BOOK_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 const CONFIG_PREFIX = "var htmlConfig = ";
-const PAGE_PATH_PATTERN = /^\.\.\/files\/mobile\/\d+\.webp$/;
+const NUMBERED_PAGE_PATH_PATTERN = /^\.\.\/files\/mobile\/\d+\.webp$/;
+const HASHED_PAGE_NAME_PATTERN = /^[a-f0-9]{32}\.webp$/;
 
 export function isValidBookId(value: string): boolean {
   return BOOK_ID_PATTERN.test(value);
@@ -71,10 +72,13 @@ export function parseAnyFlipConfig(
 
   const pages = config.fliphtml5_pages.map((page) => {
     const path = page.n[0];
-    if (!PAGE_PATH_PATTERN.test(path)) {
-      throw new Error("Invalid AnyFlip page path");
+    if (NUMBERED_PAGE_PATH_PATTERN.test(path)) {
+      return `https://online.anyflip.com/${identity.publisherId}/${identity.bookId}/${path.slice(3)}`;
     }
-    return `https://online.anyflip.com/${identity.publisherId}/${identity.bookId}/${path.slice(3)}`;
+    if (HASHED_PAGE_NAME_PATTERN.test(path)) {
+      return `https://online.anyflip.com/${identity.publisherId}/${identity.bookId}/files/large/${path}`;
+    }
+    throw new Error("Invalid AnyFlip page path");
   });
 
   return {

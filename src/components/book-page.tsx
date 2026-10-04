@@ -44,7 +44,6 @@ export const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
             onError={() => setStatus("error")}
           />
         )}
-        <span className="page-number" aria-hidden="true">{pageNumber}</span>
       </div>
     );
   },
