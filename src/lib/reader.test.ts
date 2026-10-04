@@ -4,10 +4,18 @@ import test from "node:test";
 
 import {
   canonicalPage,
+  classifyHorizontalGesture,
   getBookMetadata,
   isLastSpread,
   isTypingTarget,
 } from "./reader";
+
+test("distinguishes taps from horizontal swipes", () => {
+  assert.equal(classifyHorizontalGesture(100, 104), "tap");
+  assert.equal(classifyHorizontalGesture(300, 240), "next");
+  assert.equal(classifyHorizontalGesture(40, 100), "previous");
+  assert.equal(classifyHorizontalGesture(100, 105, 20, 90), "ignore");
+});
 
 test("accepts complete book metadata", () => {
   assert.deepEqual(
@@ -121,13 +129,17 @@ test("keeps reader chrome hidden until the book is pressed", () => {
   const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(source, /useState\(false\)/);
-  assert.match(source, /onPointerDown=\{toggleChrome\}/);
-  assert.doesNotMatch(source, /className="reader-controls"[\s\S]{0,160}onPointerDown/);
-  assert.match(source, /showPage\(currentPage - \(isPortrait \? 1 : 2\)\)/);
-  assert.match(source, /showPage\(currentPage \+ \(isPortrait \? 1 : 2\)\)/);
+  assert.match(source, /onPointerDown=\{startGesture\}/);
+  assert.match(source, /onPointerUp=\{finishGesture\}/);
+  assert.doesNotMatch(source, /onPointerDown=\{toggleChrome\}/);
+  assert.match(source, /showPage\(currentPageRef\.current - \(isPortraitRef\.current \? 1 : 2\)\)/);
+  assert.match(source, /showPage\(currentPageRef\.current \+ \(isPortraitRef\.current \? 1 : 2\)\)/);
   assert.doesNotMatch(source, /\.flipPrev\(\)|\.flipNext\(\)/);
   assert.match(source, /disableFlipByClick=\{true\}/);
   assert.match(source, /window\.setTimeout\(hideChrome, CHROME_HIDE_DELAY\)/);
+  assert.match(source, /onPointerDown=\{revealChrome\}/);
+  assert.match(source, /onFocus=\{holdChrome\}/);
+  assert.match(source, /onInput=\{holdChrome\}/);
   assert.match(source, /reader-shell \$\{chromeVisible \? "is-chrome-visible" : ""\}/);
   assert.match(source, /inert=\{!chromeVisible \? true : undefined\}/);
   assert.match(css, /\.reader-header,[\s\S]*?\.reader-controls \{[\s\S]*?visibility: hidden;/);

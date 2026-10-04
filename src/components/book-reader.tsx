@@ -2,13 +2,22 @@
 
 import Link from "next/link";
 import HTMLFlipBook from "react-pageflip";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { BookPage } from "@/components/book-page";
 import type { BookMetadata } from "@/lib/anyflip";
 import { normalizePage } from "@/lib/page";
 import {
   canonicalPage,
+  classifyHorizontalGesture,
   getBookMetadata,
   isLastSpread,
   isTypingTarget,
@@ -62,6 +71,7 @@ export default function BookReader({
   const currentPageRef = useRef(1);
   const bookRef = useRef<FlipBookHandle | null>(null);
   const chromeTimerRef = useRef<number | null>(null);
+  const gestureRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   const pages = useMemo(
     () => metadata?.pages.map((src, index) => (
       <BookPage key={src} src={src} pageNumber={index + 1} />
@@ -150,12 +160,12 @@ export default function BookReader({
   );
 
   const previous = useCallback(
-    () => showPage(currentPage - (isPortrait ? 1 : 2)),
-    [currentPage, isPortrait, showPage],
+    () => showPage(currentPageRef.current - (isPortraitRef.current ? 1 : 2)),
+    [showPage],
   );
   const next = useCallback(
-    () => showPage(currentPage + (isPortrait ? 1 : 2)),
-    [currentPage, isPortrait, showPage],
+    () => showPage(currentPageRef.current + (isPortraitRef.current ? 1 : 2)),
+    [showPage],
   );
 
   const hideChrome = useCallback(() => {
@@ -176,6 +186,39 @@ export default function BookReader({
     if (chromeVisible) hideChrome();
     else revealChrome();
   }, [chromeVisible, hideChrome, revealChrome]);
+
+  const holdChrome = useCallback(() => {
+    if (chromeTimerRef.current !== null) {
+      window.clearTimeout(chromeTimerRef.current);
+      chromeTimerRef.current = null;
+    }
+    setChromeVisible(true);
+  }, []);
+
+  const startGesture = useCallback((event: ReactPointerEvent<HTMLElement>) => {
+    gestureRef.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, []);
+
+  const finishGesture = useCallback((event: ReactPointerEvent<HTMLElement>) => {
+    const start = gestureRef.current;
+    gestureRef.current = null;
+    if (!start || start.pointerId !== event.pointerId) return;
+
+    const gesture = classifyHorizontalGesture(
+      start.x,
+      event.clientX,
+      start.y,
+      event.clientY,
+    );
+    if (gesture === "previous") previous();
+    else if (gesture === "next") next();
+    else toggleChrome();
+  }, [next, previous, toggleChrome]);
 
   useEffect(() => () => {
     if (chromeTimerRef.current !== null) window.clearTimeout(chromeTimerRef.current);
@@ -247,7 +290,11 @@ export default function BookReader({
       <section
         className="book-stage"
         aria-label={`${metadata.title} pages. Press to show or hide reader controls.`}
-        onPointerDown={toggleChrome}
+        onPointerDown={startGesture}
+        onPointerUp={finishGesture}
+        onPointerCancel={() => {
+          gestureRef.current = null;
+        }}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -278,7 +325,7 @@ export default function BookReader({
           showCover
           mobileScrollSupport
           clickEventForward
-          useMouseEvents
+          useMouseEvents={false}
           swipeDistance={30}
           showPageCorners
           disableFlipByClick={true}
@@ -300,6 +347,7 @@ export default function BookReader({
         className="reader-controls"
         aria-label="Reader controls"
         inert={!chromeVisible ? true : undefined}
+        onPointerDown={revealChrome}
       >
         <button
           type="button"
@@ -317,6 +365,9 @@ export default function BookReader({
             max={metadata.pageCount}
             value={jumpPage}
             onChange={(event) => setJumpPage(event.target.value)}
+            onFocus={holdChrome}
+            onInput={holdChrome}
+            onBlur={revealChrome}
             inputMode="numeric"
           />
           <button type="submit">Go</button>

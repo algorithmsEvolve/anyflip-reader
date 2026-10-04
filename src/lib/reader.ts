@@ -42,6 +42,19 @@ export function canonicalPage(page: number, isPortrait: boolean): number {
   return isPortrait || page <= 1 || page % 2 === 0 ? page : page - 1;
 }
 
+export function classifyHorizontalGesture(
+  startX: number,
+  endX: number,
+  startY = 0,
+  endY = 0,
+): "tap" | "ignore" | "previous" | "next" {
+  const deltaX = endX - startX;
+  const deltaY = endY - startY;
+  if (Math.abs(deltaX) < 30 && Math.abs(deltaY) < 30) return "tap";
+  if (Math.abs(deltaX) <= Math.abs(deltaY)) return "ignore";
+  return deltaX > 0 ? "previous" : "next";
+}
+
 export function isLastSpread(
   currentPage: number,
   pageCount: number,
