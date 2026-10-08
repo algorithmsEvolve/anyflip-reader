@@ -48,3 +48,16 @@ Status: active, uncommitted
 - Production dependency audit: 0 vulnerabilities.
 - Vercel: not configured in this session.
 - Git: no commit/push performed.
+
+## Mixed-source Library Upgrade (in progress)
+
+- [x] Cover-first responsive library grid and source badges.
+- [x] AnyFlip first-page covers stored on new additions.
+- [x] PDF/EPUB direct client upload contract via Vercel Blob (public URLs, 200 MB limit).
+- [x] PDF reader (`react-pdf`) and EPUB reader (`epubjs`) routes.
+- [x] PDF first page rendered client-side to PNG and stored as Blob cover.
+- [x] EPUB embedded cover extracted when present; books without an embedded cover retain honest title fallback.
+- [x] PDF and EPUB upload, Blob row creation, library card, and reader rendering verified in Chrome.
+- [x] Supabase mixed-source migration applied and Vercel Blob token configured.
+- [x] Local gate: TypeScript, ESLint, 59/59 tests, production build, desktop/mobile visual checks.
+- [x] Final Chrome verification: multi-location EPUB moved from Page 1 to Page 70, reloaded, and resumed Page 70.

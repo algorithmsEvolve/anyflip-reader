@@ -14,9 +14,11 @@ export default async function LibraryPage() {
 
   const { data, error } = await supabase
     .from("library_books")
-    .select("id,user_id,publisher_id,book_id,title,page_count,last_page,last_read_at,created_at")
+    .select("id,user_id,source_type,publisher_id,book_id,title,page_count,last_page,cover_url,blob_url,file_name,last_read_at,created_at")
     .order("last_read_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
+
+  const books = (data ?? []) as LibraryBook[];
 
   return (
     <main className="library-page">
@@ -31,21 +33,22 @@ export default async function LibraryPage() {
         <div>
           <p className="eyebrow">Your shelf</p>
           <h1>Library</h1>
-          <p>Pick up where you stopped, without hunting for the page.</p>
+          <p>Every book in one place. Covers open straight into the reader, exactly where you stopped.</p>
         </div>
-        <LibraryAddBookForm />
       </header>
+
+      <LibraryAddBookForm />
 
       {error ? (
         <p className="library-message" role="alert">Unable to load your library.</p>
-      ) : data.length === 0 ? (
+      ) : books.length === 0 ? (
         <section className="library-empty">
           <h2>No books saved yet.</h2>
-          <p>Add a public AnyFlip URL above. Your reading progress will appear here.</p>
+          <p>Add a public AnyFlip URL or upload a PDF or EPUB above. Reading progress appears under each cover.</p>
         </section>
       ) : (
-        <ul className="library-list" aria-label="Saved books">
-          {(data as LibraryBook[]).map((book) => (
+        <ul className="library-grid" aria-label="Saved books">
+          {books.map((book) => (
             <LibraryBookItem key={book.id} book={book} />
           ))}
         </ul>

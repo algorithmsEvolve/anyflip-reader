@@ -9,10 +9,14 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
+    "@vercel/blob": "^2.8.1",
+    "epubjs": "^0.3.93",
     "next": "latest",
+    "pdfjs-dist": "^6.3.289",
     "react": "latest",
     "react-dom": "latest",
-    "react-pageflip": "^2.0.3"
+    "react-pageflip": "^2.0.3",
+    "react-pdf": "^11.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "latest",

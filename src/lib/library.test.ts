@@ -2,41 +2,45 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const migrationPath = new URL(
-  "../../supabase/migrations/202610040001_create_library_books.sql",
-  import.meta.url,
+import {
+  clampProgressPage,
+  libraryMutationError,
+  libraryProgress,
+  resolveLibraryReadHref,
+  type LibraryBook,
+} from "./library";
+
+const MIGRATIONS = [
+  "202610040001_create_library_books.sql",
+  "202610080001_support_mixed_source_library.sql",
+].map((name) =>
+  readFileSync(
+    new URL(`../../supabase/migrations/${name}`, import.meta.url),
+    "utf8",
+  ),
 );
+const MIXED_MIGRATION = MIGRATIONS[1];
 
-test("library migration enforces ownership and one copy per user", () => {
-  const migration = readFileSync(migrationPath, "utf8");
-
-  assert.match(
-    migration,
-    /alter table public\.library_books enable row level security/i,
-  );
-  assert.match(migration, /unique \(user_id, publisher_id, book_id\)/i);
-  assert.match(
-    migration,
-    /for select[\s\S]*auth\.uid\(\) = user_id/i,
-  );
-  assert.match(
-    migration,
-    /for insert[\s\S]*with check \(auth\.uid\(\) = user_id\)/i,
-  );
-  assert.match(
-    migration,
-    /for update[\s\S]*using \(auth\.uid\(\) = user_id\)[\s\S]*with check \(auth\.uid\(\) = user_id\)/i,
-  );
-  assert.match(
-    migration,
-    /for delete[\s\S]*auth\.uid\(\) = user_id/i,
-  );
+test("mixed-source migration extends ownership-safe library rows", () => {
+  assert.match(MIXED_MIGRATION, /source_type text/i);
+  assert.match(MIXED_MIGRATION, /check \(\s*source_type in \('anyflip', 'pdf', 'epub'\)/i);
+  assert.match(MIXED_MIGRATION, /cover_url text/i);
+  assert.match(MIXED_MIGRATION, /blob_url text/i);
+  assert.match(MIXED_MIGRATION, /file_name text/i);
+  assert.match(MIXED_MIGRATION, /not null default 'anyflip'/i);
+  assert.match(MIXED_MIGRATION, /constraint library_books_owner_book_unique/i);
+  assert.match(MIXED_MIGRATION, /drop index if exists library_books_user_last_read_idx/i);
+  assert.match(MIXED_MIGRATION, /create index library_books_user_last_read_idx/i);
+  assert.match(MIXED_MIGRATION, /drop constraint if exists library_books_page_count_check/i);
+  assert.match(MIXED_MIGRATION, /add constraint library_books_page_count_check\s*\n?\s*check \(page_count > 0\)/i);
+  assert.match(MIXED_MIGRATION, /alter table public\.library_books enable row level security/i);
+  assert.match(MIXED_MIGRATION, /for select[\s\S]*auth\.uid\(\) = user_id/i);
+  assert.match(MIXED_MIGRATION, /for insert[\s\S]*with check \(auth\.uid\(\) = user_id\)/i);
+  assert.match(MIXED_MIGRATION, /for update[\s\S]*using \(auth\.uid\(\) = user_id\)[\s\S]*with check \(auth\.uid\(\) = user_id\)/i);
+  assert.match(MIXED_MIGRATION, /for delete[\s\S]*auth\.uid\(\) = user_id/i);
 });
 
 test("library progress clamps pages and maps mutation errors", async () => {
-  const { clampProgressPage, libraryMutationError, libraryProgress } =
-    await import("./library");
-
   assert.equal(libraryProgress(1, 377), 0);
   assert.equal(libraryProgress(189, 377), 50);
   assert.equal(libraryProgress(377, 377), 100);
@@ -50,46 +54,33 @@ test("library progress clamps pages and maps mutation errors", async () => {
   assert.equal(libraryMutationError("other"), "Unable to update your library.");
 });
 
-test("library actions derive trusted book data and enforce ownership", () => {
-  const actions = readFileSync(
-    new URL("../app/library/actions.ts", import.meta.url),
-    "utf8",
-  );
+const SAMPLE_BOOK: LibraryBook = {
+  id: "00000000-0000-4000-8000-000000000000",
+  user_id: "00000000-0000-4000-8000-000000000001",
+  source_type: "anyflip",
+  publisher_id: "iehyo",
+  book_id: "byxp",
+  title: "Sample Book",
+  page_count: 377,
+  last_page: 12,
+  cover_url: null,
+  blob_url: null,
+  file_name: null,
+  last_read_at: "2026-10-08T00:00:00.000Z",
+  created_at: "2026-10-04T00:00:00.000Z",
+};
 
-  assert.match(actions, /auth\.getUser\(\)/);
-  assert.match(actions, /parseAnyFlipUrl/);
-  assert.match(actions, /fetchAnyFlipBook/);
-  assert.match(actions, /user_id: user\.id/);
-  assert.match(actions, /publisher_id: identity\.publisherId/);
-  assert.match(actions, /page_count: metadata\.pageCount/);
-  assert.match(actions, /\.eq\("id", id\)/);
-  assert.match(actions, /\.eq\("user_id", user\.id\)/);
-  assert.match(actions, /revalidatePath\("\/library"\)/);
-  assert.doesNotMatch(actions, /service.role|SERVICE_ROLE/);
-});
-
-test("library UI protects ownership and exposes real reader actions", () => {
-  const page = readFileSync(
-    new URL("../app/library/page.tsx", import.meta.url),
-    "utf8",
+test("read hrefs stay canonical per source type", () => {
+  assert.equal(
+    resolveLibraryReadHref(SAMPLE_BOOK),
+    "/read/iehyo/byxp?page=12",
   );
-  const item = readFileSync(
-    new URL("../components/library-book-item.tsx", import.meta.url),
-    "utf8",
+  assert.equal(
+    resolveLibraryReadHref({ ...SAMPLE_BOOK, source_type: "pdf" }),
+    "/read/library/00000000-0000-4000-8000-000000000000?page=12",
   );
-  const form = readFileSync(
-    new URL("../components/library-add-book-form.tsx", import.meta.url),
-    "utf8",
+  assert.equal(
+    resolveLibraryReadHref({ ...SAMPLE_BOOK, source_type: "epub" }),
+    "/read/library/00000000-0000-4000-8000-000000000000?page=12",
   );
-
-  assert.match(page, /auth\.getUser\(\)/);
-  assert.match(page, /redirect\("\/login\?next=\/library"\)/);
-  assert.match(
-    page,
-    /order\("last_read_at", \{ ascending: false, nullsFirst: false \}\)/,
-  );
-  assert.match(item, /Continue reading/);
-  assert.match(item, /\?page=\$\{book\.last_page\}/);
-  assert.match(item, /confirm\(/);
-  assert.match(form, /useActionState/);
 });

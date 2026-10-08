@@ -26,16 +26,16 @@ export default async function Home() {
       <section className="landing-copy" aria-labelledby="page-title">
         <h1 id="page-title">Keep the book.<br />Lose the clutter.</h1>
         <p className="introduction">
-          Paste an AnyFlip link to open its pages in a focused reader with a
-          stable address.
+          Save AnyFlip books, upload PDFs and EPUBs, and pick up every title
+          exactly where you stopped — from one quiet shelf.
         </p>
       </section>
 
       <section className="reader-entry" aria-label="Open an AnyFlip book">
         <BookUrlForm />
         <p className="availability-note">
-          Pagekeeper supports public AnyFlip books only. Private or restricted
-          books cannot be opened.
+          Pagekeeper supports public AnyFlip books and your own PDF or EPUB
+          files. Private AnyFlip books cannot be opened.
         </p>
       </section>
     </main>
