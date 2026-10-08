@@ -107,7 +107,7 @@ function UploadBookForm() {
           contentType: selected.type || (isPdf ? "application/pdf" : "application/epub+zip"),
           handleUploadUrl: "/api/books/upload",
           clientPayload: data.user.id,
-          multipart: selected.size > 4 * 1024 * 1024,
+          multipart: selected.size > 100 * 1024 * 1024,
           onUploadProgress: ({ percentage }) => setPercent(Math.round(percentage)),
         },
       );
