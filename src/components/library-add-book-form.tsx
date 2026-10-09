@@ -70,6 +70,7 @@ function UploadBookForm() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [uploadStage, setUploadStage] = useState("");
   const [percent, setPercent] = useState(0);
 
   async function onSubmit(formData: FormData) {
@@ -91,6 +92,7 @@ function UploadBookForm() {
 
     setUploading(true);
     setUploadError("");
+    setUploadStage("Preparing secure upload…");
     setPercent(0);
     try {
       const supabase = createBrowserClient();
@@ -99,6 +101,7 @@ function UploadBookForm() {
 
       const sourceType = isPdf ? "pdf" : "epub";
       const uploadId = crypto.randomUUID();
+      setUploadStage("Uploading book…");
       const blob = await upload(
         `books/${data.user.id}/${uploadId}-${safeFileName(selected.name)}`,
         selected,
@@ -107,12 +110,14 @@ function UploadBookForm() {
           contentType: selected.type || (isPdf ? "application/pdf" : "application/epub+zip"),
           handleUploadUrl: "/api/books/upload",
           clientPayload: data.user.id,
-          multipart: selected.size > 100 * 1024 * 1024,
+          multipart: selected.size > 4 * 1024 * 1024,
           onUploadProgress: ({ percentage }) => setPercent(Math.round(percentage)),
         },
       );
 
+      setUploadStage("Creating cover…");
       const cover = await createCover(selected, sourceType);
+      setUploadStage(cover ? "Uploading cover…" : "Saving to library…");
       const coverBlob = cover ? await upload(
         `books/${data.user.id}/${uploadId}-cover.png`,
         cover,
@@ -124,6 +129,7 @@ function UploadBookForm() {
         },
       ) : null;
 
+      setUploadStage("Saving to library…");
       formData.set("sourceType", sourceType);
       formData.set("blobUrl", blob.url);
       formData.set("coverUrl", coverBlob?.url ?? "");
@@ -137,6 +143,7 @@ function UploadBookForm() {
       setUploadError(error instanceof Error ? error.message : "Upload failed. Try again.");
     } finally {
       setUploading(false);
+      setUploadStage("");
     }
   }
 
@@ -152,9 +159,15 @@ function UploadBookForm() {
           onChange={(event) => setFile(event.target.files?.[0] ?? null)}
         />
       </label>
-      <button type="submit" disabled={uploading}>
+      <button type="submit" disabled={uploading} aria-busy={uploading}>
         {uploading ? `Uploading ${percent}%` : "Upload book"}
       </button>
+      {uploading ? (
+        <div className="upload-progress" role="status" aria-live="polite">
+          <div className="upload-progress-track" aria-hidden="true"><span style={{ width: `${percent}%` }} /></div>
+          <span>{uploadStage}</span>
+        </div>
+      ) : null}
       <p className={uploadError || state.error ? "form-error" : "form-success"} role="status" aria-live="polite">
         {uploadError || state.error || state.success}
       </p>

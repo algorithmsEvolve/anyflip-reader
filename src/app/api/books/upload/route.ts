@@ -32,7 +32,6 @@ export async function POST(request: Request): Promise<Response> {
         return {
           allowedContentTypes: UPLOAD_CONTENT_TYPES,
           maximumSizeInBytes: MAX_UPLOAD_BYTES,
-          addRandomSuffix: true,
         };
       },
     });

@@ -61,4 +61,5 @@ Status: active, uncommitted
 - [x] Supabase mixed-source migration applied and Vercel Blob token configured.
 - [x] Local gate: TypeScript, ESLint, 59/59 tests, production build, desktop/mobile visual checks.
 - [x] Final Chrome verification: multi-location EPUB moved from Page 1 to Page 70, reloaded, and resumed Page 70.
-- [x] Vercel Blob upload regression: 11.9 MB PDF uploaded successfully via direct upload with zero `/mpu` requests.
+- [x] Vercel Blob upload regression: 11.9 MB PDF uploaded successfully through five multipart (`/mpu`) requests, all HTTP 200.
+- [x] Upload UI shows live percentage plus preparation, file upload, cover, and save phases.
